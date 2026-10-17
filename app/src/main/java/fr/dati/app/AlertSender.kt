@@ -8,7 +8,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.telephony.SmsManager
@@ -83,19 +82,9 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
         val provider = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
             .firstOrNull { locationManager.isProviderEnabled(it) } ?: return
 
-        // Toutes les méthodes sont implémentées : avant Android 11 elles n'ont pas d'implémentation par défaut.
-        val listener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                cancel()
-                onLocation(location)
-            }
-
-            override fun onProviderEnabled(provider: String) = Unit
-
-            override fun onProviderDisabled(provider: String) = Unit
-
-            @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        val listener = locationListener { location ->
+            cancel()
+            onLocation(location)
         }
         pendingListener = listener
         locationManager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())

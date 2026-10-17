@@ -1,5 +1,6 @@
 package fr.dati.app
 
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -26,7 +28,8 @@ import kotlin.math.sqrt
 
 /**
  * Service au premier plan qui surveille l'utilisateur en continu, même écran éteint :
- * accéléromètre (chute, immobilité), échéances de confirmation, déclenchement des alertes.
+ * accéléromètre et gyroscope (chute, immobilité), suivi GPS, échéances de confirmation,
+ * déclenchement des alertes.
  */
 class DatiService : Service(), SensorEventListener {
     private lateinit var settings: DatiSettings
@@ -40,6 +43,9 @@ class DatiService : Service(), SensorEventListener {
     private var fallDetectionEnabled = true
     private var immobilityDetector: ImmobilityDetector? = null
     private var wakeLock: PowerManager.WakeLock? = null
+
+    // Maintient une position récente pour les SMS d'alerte (lue via getLastKnownLocation).
+    private val locationTracker = locationListener { }
 
     private val ticker = object : Runnable {
         override fun run() {
@@ -97,9 +103,10 @@ class DatiService : Service(), SensorEventListener {
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "dati:monitoring")
             .apply { acquire() }
         configureDetectors()
-        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
-            sensorManager.registerListener(this, it, SAMPLING_PERIOD_US)
+        for (type in listOf(Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GYROSCOPE)) {
+            sensorManager.getDefaultSensor(type)?.let { sensorManager.registerListener(this, it, SAMPLING_PERIOD_US) }
         }
+        startLocationTracking()
         machine.updateConfig(settings.toConfig(), now())
         machine.start(now())
         handler.post(ticker)
@@ -115,10 +122,27 @@ class DatiService : Service(), SensorEventListener {
     private fun releaseResources() {
         handler.removeCallbacks(ticker)
         sensorManager.unregisterListener(this)
+        getSystemService(LocationManager::class.java).removeUpdates(locationTracker)
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
         alertSender.cancel()
         signal.stop()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startLocationTracking() {
+        val locationManager = getSystemService(LocationManager::class.java)
+        for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
+            try {
+                if (locationManager.isProviderEnabled(provider)) {
+                    locationManager.requestLocationUpdates(
+                        provider, LOCATION_INTERVAL_MS, LOCATION_MIN_DISTANCE_M, locationTracker, Looper.getMainLooper(),
+                    )
+                }
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Localisation non autorisée", e)
+            }
+        }
     }
 
     private fun reloadSettings() {
@@ -162,13 +186,22 @@ class DatiService : Service(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
         if (machine.state !is DatiState.Monitoring) return
         val (x, y, z) = event.values
-        val magnitudeG = sqrt(x * x + y * y + z * z) / SensorManager.GRAVITY_EARTH
         val timestampMs = event.timestamp / 1_000_000
-        when {
-            fallDetectionEnabled && fallDetector.onSample(timestampMs, magnitudeG) ->
-                machine.onDetection(AlarmReason.FALL, now())
-            immobilityDetector?.onSample(timestampMs, magnitudeG) == true ->
-                machine.onDetection(AlarmReason.IMMOBILITY, now())
+        when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                val g = SensorManager.GRAVITY_EARTH
+                val magnitudeG = sqrt(x * x + y * y + z * z) / g
+                when {
+                    fallDetectionEnabled && fallDetector.onSample(timestampMs, magnitudeG) ->
+                        machine.onDetection(AlarmReason.FALL, now())
+                    immobilityDetector?.onAcceleration(timestampMs, x / g, y / g, z / g) == true ->
+                        machine.onDetection(AlarmReason.IMMOBILITY, now())
+                }
+            }
+            Sensor.TYPE_GYROSCOPE ->
+                if (immobilityDetector?.onRotation(timestampMs, x, y, z) == true) {
+                    machine.onDetection(AlarmReason.IMMOBILITY, now())
+                }
         }
     }
 
@@ -185,6 +218,8 @@ class DatiService : Service(), SensorEventListener {
         private const val TAG = "DatiService"
         private const val TICK_MS = 1_000L
         private const val SAMPLING_PERIOD_US = 20_000 // 50 Hz
+        private const val LOCATION_INTERVAL_MS = 30_000L
+        private const val LOCATION_MIN_DISTANCE_M = 10f
 
         /** Horloge monotone utilisée par la machine à états (insensible aux changements d'heure). */
         fun now(): Long = SystemClock.elapsedRealtime()

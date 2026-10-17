@@ -9,7 +9,7 @@ si elle ne donne plus signe de vie.
 | Déclencheur | Détection |
 |---|---|
 | **Chute** | chute libre suivie d'un choc (accéléromètre) |
-| **Immobilité** | le téléphone ne bouge plus pendant la durée réglée (2 min par défaut) |
+| **Immobilité** | ni secousse, ni changement d'orientation (accéléromètre), ni rotation (gyroscope) pendant la durée réglée (2 min par défaut) |
 | **Confirmation manquée** | l'utilisateur doit appuyer sur « Je vais bien » à intervalle régulier (30 min par défaut) |
 | **SOS** | appui long sur le bouton SOS : alarme immédiate |
 
@@ -23,6 +23,10 @@ si elle ne donne plus signe de vie.
 3. Quand l'utilisateur arrête l'alarme, les contacts reçoivent un SMS « tout va bien ».
 
 La surveillance tourne dans un service au premier plan (notification permanente) et continue écran éteint.
+Le GPS est suivi en continu pendant la surveillance (toutes les 30 s ou 10 m) pour que la position
+envoyée dans l'alerte soit récente. Il ne sert volontairement **pas** à détecter le mouvement : à
+l'intérieur, la position GPS dérive de plusieurs dizaines de mètres, ce qui ferait croire qu'une
+personne inconsciente bouge encore.
 
 ## Installer l'application
 
