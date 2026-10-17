@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dati_red">#C62828</color>
+    <color name="dati_green">#2E7D32</color>
+    <color name="dati_orange">#E65100</color>
+    <color name="dati_grey">#757575</color>
+    <color name="white">#FFFFFF</color>
+</resources>
