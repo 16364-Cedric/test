@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -25,3 +27,18 @@ jobs:
         with:
           name: dati-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      # Lien de téléchargement direct et stable :
+      # https://github.com/<propriétaire>/<dépôt>/releases/download/dati-latest/dati.apk
+      - name: Publier l'APK dans la release « dati-latest »
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk dati.apk
+          gh release delete dati-latest --yes --cleanup-tag || true
+          gh release create dati-latest dati.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "DATI – dernière version" \
+            --notes "APK compilée automatiquement depuis le commit $GITHUB_SHA."

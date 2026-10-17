@@ -30,10 +30,13 @@ personne inconsciente bouge encore.
 
 ## Installer l'application
 
-Chaque push compile l'APK via GitHub Actions :
+Chaque push compile l'APK via GitHub Actions et la publie à une adresse fixe :
 
-1. Onglet **Actions** du dépôt → dernier run « Android » → artefact **dati-debug-apk**.
-2. Copier `app-debug.apk` sur le téléphone et l'ouvrir (autoriser l'installation d'applications inconnues).
+**<https://github.com/16364-Cedric/test/releases/download/dati-latest/dati.apk>**
+
+Ouvrir ce lien dans Chrome sur le téléphone, puis ouvrir `dati.apk` (autoriser l'installation
+d'applications inconnues ; si Google Play Protect bloque, désactiver temporairement l'analyse
+Play Protect le temps de l'installation).
 
 Android 8.0 (API 26) minimum.
 
