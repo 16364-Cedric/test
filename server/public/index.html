@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supervision DATI</title>
+  <script src="/vendor/qrcode.js"></script>
+  <style>
+    :root {
+      --bg: #f5f5f4; --card: #ffffff; --text: #1c1917; --muted: #78716c; --border: #e7e5e4;
+      --red: #c62828; --red-bg: #fdecea; --orange: #e65100; --orange-bg: #fff3e0;
+      --green: #2e7d32; --green-bg: #e8f5e9; --grey-bg: #f0efee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1917; --card: #292524; --text: #f5f5f4; --muted: #a8a29e; --border: #44403c;
+        --red-bg: #4a1d1b; --orange-bg: #4a2a12; --green-bg: #1d3a20; --grey-bg: #3a3633;
+        --red: #ef6c6c; --orange: #ffa25c; --green: #7cc47f;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); background: var(--card); }
+    header h1 { margin: 0; font-size: 20px; }
+    #updated { color: var(--muted); font-size: 13px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+    section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    h2 { margin: 0 0 12px; font-size: 17px; }
+    .empty { color: var(--muted); }
+    .alert { border-radius: 8px; padding: 12px; margin-bottom: 10px; display: grid; gap: 6px; }
+    .alert.urgent { background: var(--red-bg); border-left: 5px solid var(--red); }
+    .alert.acked { background: var(--orange-bg); border-left: 5px solid var(--orange); }
+    .alert.info { background: var(--grey-bg); border-left: 5px solid var(--muted); }
+    .alert .title { font-weight: 700; }
+    .alert .meta { color: var(--muted); font-size: 13px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+    button.primary { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+    a { color: inherit; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 13px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--grey-bg); }
+    .badge.ok { background: var(--green-bg); color: var(--green); }
+    .badge.warn { background: var(--orange-bg); color: var(--orange); }
+    .badge.bad { background: var(--red-bg); color: var(--red); }
+    .table-wrap { overflow-x: auto; }
+    form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: end; }
+    label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+    input, select { font: inherit; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+    #qr-result { margin-top: 16px; display: none; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    #qr { background: #fff; padding: 12px; border-radius: 8px; }
+    #qr-result p { margin: 0 0 8px; max-width: 520px; }
+    code { word-break: break-all; font-size: 12px; }
+    details summary { cursor: pointer; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Supervision DATI</h1>
+    <span id="updated">Chargement…</span>
+  </header>
+  <main>
+    <section>
+      <h2>Alertes en cours</h2>
+      <div id="open-alerts"></div>
+    </section>
+
+    <section>
+      <h2>Salariés équipés</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nom</th><th>État</th><th>Dernier contact</th><th>Batterie</th><th></th></tr></thead>
+          <tbody id="devices"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Équiper un salarié</h2>
+      <form id="create">
+        <label>Nom affiché <input name="name" required maxlength="80"></label>
+        <label>Numéros SMS de secours (optionnel, séparés par des virgules) <input name="contacts" placeholder="+33612345678"></label>
+        <label>Confirmation de présence (min, 0 = non) <input name="checkin" type="number" min="0" value="30"></label>
+        <label>Délai d'annulation (s) <input name="prealarm" type="number" min="10" value="30"></label>
+        <label>Alarme d'immobilité (s, 0 = non) <input name="immobility" type="number" min="0" value="120"></label>
+        <label>Sensibilité chute
+          <select name="sensitivity"><option value="LOW">Faible</option><option value="NORMAL" selected>Normale</option><option value="HIGH">Élevée</option></select>
+        </label>
+        <button class="primary" type="submit">Créer et afficher le QR code</button>
+      </form>
+      <div id="qr-result">
+        <div id="qr"></div>
+        <div>
+          <p><strong>À scanner avec l'appareil photo du téléphone du salarié</strong>, après avoir installé l'application DATI. Le téléphone demande confirmation avant d'appliquer la configuration.</p>
+          <p>Ce QR code contient la clé secrète de l'appareil : il n'est affiché qu'une seule fois. Ne le diffusez pas.</p>
+          <details><summary>Lien de configuration</summary><code id="config-url"></code></details>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Historique</h2>
+      <div id="history"></div>
+    </section>
+  </main>
+
+  <script>
+    const STATE_LABELS = { idle: 'Protection arrêtée', monitoring: 'Protégé', prealarm: 'Pré-alarme', alarm: 'ALARME' };
+    const fmt = (ms) => ms ? new Date(ms).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '–';
+    const ago = (ms, now) => {
+      if (!ms) return 'jamais';
+      const min = Math.round((now - ms) / 60000);
+      return min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : `il y a ${Math.round(min / 60)} h`;
+    };
+
+    function el(tag, attrs = {}, ...children) {
+      const node = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k === 'class') node.className = v;
+        else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
+        else node.setAttribute(k, v);
+      }
+      for (const child of children.flat()) {
+        if (child !== null && child !== undefined && child !== false) node.append(child);
+      }
+      return node;
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(`/api/v1/admin/${path}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+      return res.status === 204 ? null : res.json();
+    }
+
+    function alertCard(alert, now, withActions) {
+      const urgent = ['alarm', 'lost_contact'].includes(alert.type) && !alert.test;
+      const cls = alert.ackedAt ? 'acked' : urgent ? 'urgent' : 'info';
+      return el('div', { class: `alert ${cls}` },
+        el('div', { class: 'title' }, `${alert.deviceName} — ${alert.label}`),
+        el('div', { class: 'meta' },
+          `Début : ${fmt(alert.createdAt)} (${ago(alert.createdAt, now)})`,
+          alert.ackedAt ? ` · Pris en charge par ${alert.ackedBy} à ${fmt(alert.ackedAt)}` : '',
+          alert.escalatedAt ? ` · Escaladée à ${fmt(alert.escalatedAt)}` : '',
+          alert.resolvedAt ? ` · Clôturée à ${fmt(alert.resolvedAt)} : ${alert.resolution}` : ''),
+        withActions && el('div', { class: 'actions' },
+          alert.mapsUrl && el('a', { href: alert.mapsUrl, target: '_blank', rel: 'noopener' }, el('button', {}, 'Voir la position')),
+          !alert.ackedAt && el('button', { class: 'primary', onclick: () => acknowledge(alert) }, 'Je prends en charge'),
+          el('button', { onclick: () => resolve(alert) }, 'Clôturer')),
+        !withActions && alert.mapsUrl && el('a', { href: alert.mapsUrl, target: '_blank', rel: 'noopener', class: 'meta' }, 'Position'));
+    }
+
+    async function acknowledge(alert) {
+      const by = prompt('Votre nom (il sera affiché sur le téléphone du salarié) :', localStorage.getItem('dati-name') || '');
+      if (by === null) return;
+      try { localStorage.setItem('dati-name', by); } catch {}
+      await api(`alerts/${alert.id}/ack`, { method: 'POST', body: JSON.stringify({ by }) }).catch((e) => window.alert(e.message));
+      refresh();
+    }
+
+    async function resolve(alert) {
+      if (!confirm(`Clôturer l'alerte « ${alert.label} » de ${alert.deviceName} ?`)) return;
+      await api(`alerts/${alert.id}/resolve`, { method: 'POST' }).catch((e) => window.alert(e.message));
+      refresh();
+    }
+
+    async function removeDevice(device) {
+      if (!confirm(`Supprimer ${device.name} ? Son téléphone ne pourra plus joindre le serveur.`)) return;
+      await api(`devices/${device.id}`, { method: 'DELETE' }).catch((e) => window.alert(e.message));
+      refresh();
+    }
+
+    function render({ devices, alerts, serverTime: now }) {
+      const open = alerts.filter((a) => !a.resolvedAt);
+      const closed = alerts.filter((a) => a.resolvedAt).slice(0, 50);
+      document.getElementById('open-alerts').replaceChildren(
+        ...(open.length ? open.map((a) => alertCard(a, now, true)) : [el('p', { class: 'empty' }, 'Aucune alerte en cours.')]));
+      document.getElementById('history').replaceChildren(
+        ...(closed.length ? closed.map((a) => alertCard(a, now, false)) : [el('p', { class: 'empty' }, 'Aucune alerte clôturée.')]));
+      document.getElementById('devices').replaceChildren(...(devices.length ? devices.map((d) => {
+        const badgeClass = d.state === 'alarm' ? 'bad' : d.state === 'prealarm' ? 'warn' : d.monitoring ? (d.online ? 'ok' : 'bad') : '';
+        const label = d.monitoring && !d.online && d.state !== 'alarm' ? 'Injoignable' : STATE_LABELS[d.state] || d.state;
+        return el('tr', {},
+          el('td', {}, d.name),
+          el('td', {}, el('span', { class: `badge ${badgeClass}` }, label)),
+          el('td', {}, ago(d.lastSeen, now)),
+          el('td', {}, d.battery == null ? '–' : `${d.battery} %${d.charging ? ' ⚡' : ''}`),
+          el('td', {}, el('button', { onclick: () => removeDevice(d) }, 'Supprimer')));
+      }) : [el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'Aucun salarié équipé.'))]));
+      document.getElementById('updated').textContent = `Mis à jour à ${new Date().toLocaleTimeString('fr-FR')}`;
+      document.title = open.some((a) => !a.ackedAt && !a.test && ['alarm', 'lost_contact'].includes(a.type))
+        ? '🚨 ALERTE – Supervision DATI' : 'Supervision DATI';
+    }
+
+    async function refresh() {
+      try {
+        render(await api('status'));
+      } catch (e) {
+        document.getElementById('updated').textContent = `Serveur injoignable (${e.message})`;
+      }
+    }
+
+    document.getElementById('create').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const settings = {
+        contacts: form.get('contacts').split(/[,;\s]+/).filter(Boolean).join(','),
+        checkin: form.get('checkin'),
+        prealarm: form.get('prealarm'),
+        immobility: form.get('immobility'),
+        sensitivity: form.get('sensitivity'),
+      };
+      try {
+        const { configUrl } = await api('devices', { method: 'POST', body: JSON.stringify({ name: form.get('name'), settings }) });
+        const qr = document.getElementById('qr');
+        qr.replaceChildren();
+        const code = qrcode(0, 'M');
+        code.addData(configUrl);
+        code.make();
+        qr.append(el('img', { src: code.createDataURL(5, 2), alt: 'QR code de configuration' }));
+        document.getElementById('config-url').textContent = configUrl;
+        document.getElementById('qr-result').style.display = 'flex';
+        event.target.reset();
+        refresh();
+      } catch (e) {
+        window.alert(e.message);
+      }
+    });
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

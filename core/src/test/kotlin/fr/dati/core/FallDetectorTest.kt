@@ -41,3 +41,19 @@ class FallDetectorTest {
         assertFalse(detector.replay(*samples))
     }
 }
+
+class FallSensitivityTest {
+    private val moderateFall = floatArrayOf(1f, 0.2f, 0.1f, 0.1f, 0.2f, 0.1f, 2.2f, 1f)
+
+    private fun FallDetector.replay(samples: FloatArray) = samples.withIndex().any { (i, g) -> onSample(i * 20L, g) }
+
+    @Test
+    fun `high sensitivity catches a moderate impact`() {
+        assertTrue(FallDetector.withSensitivity(FallSensitivity.HIGH).replay(moderateFall))
+    }
+
+    @Test
+    fun `normal sensitivity ignores a moderate impact`() {
+        assertFalse(FallDetector.withSensitivity(FallSensitivity.NORMAL).replay(moderateFall))
+    }
+}

@@ -44,4 +44,15 @@ class FallDetector(
         freeFallStartMs = null
         freeFallEndMs = null
     }
+
+    companion object {
+        fun withSensitivity(sensitivity: FallSensitivity) = FallDetector(impactThresholdG = sensitivity.impactThresholdG)
+    }
+}
+
+/** Sensibilité de la détection de chute : plus elle est élevée, plus un choc faible suffit. */
+enum class FallSensitivity(val impactThresholdG: Float) {
+    LOW(3.0f),
+    NORMAL(2.5f),
+    HIGH(2.0f),
 }

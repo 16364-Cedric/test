@@ -1,0 +1,14 @@
+{
+  "name": "dati-supervision",
+  "version": "0.1.0",
+  "description": "Serveur de supervision DATI : battements de cœur, alertes, prise en charge, escalade",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test"
+  }
+}

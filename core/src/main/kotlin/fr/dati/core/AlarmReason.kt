@@ -13,4 +13,7 @@ enum class AlarmReason {
 
     /** Appel volontaire au secours. */
     SOS,
+
+    /** Essai déclenché par l'utilisateur pour vérifier la chaîne d'alerte. */
+    TEST,
 }

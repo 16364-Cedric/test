@@ -89,4 +89,14 @@ class DatiStateMachineTest {
             transitions,
         )
     }
+
+    @Test
+    fun `a test goes through pre-alarm like a real detection`() {
+        val machine = DatiStateMachine(DatiConfig(checkInIntervalMs = null, preAlarmDurationMs = 10_000))
+        machine.start(0)
+        machine.onDetection(AlarmReason.TEST, 1_000)
+        assertEquals(DatiState.PreAlarm(AlarmReason.TEST, 11_000), machine.state)
+        machine.tick(11_000)
+        assertEquals(DatiState.Alarm(AlarmReason.TEST, 11_000), machine.state)
+    }
 }
