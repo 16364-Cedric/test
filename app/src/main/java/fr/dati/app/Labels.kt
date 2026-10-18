@@ -9,6 +9,7 @@ fun AlarmReason.label(context: Context): String = context.getString(
         AlarmReason.IMMOBILITY -> R.string.reason_immobility
         AlarmReason.MISSED_CHECK_IN -> R.string.reason_missed_check_in
         AlarmReason.SOS -> R.string.reason_sos
+        AlarmReason.TEST -> R.string.reason_test
     }
 )
 

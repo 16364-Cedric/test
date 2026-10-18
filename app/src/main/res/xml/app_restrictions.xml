@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Configuration gérée (MDM / Android Enterprise). Les clés sont celles du lien dati://config. -->
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+    <restriction android:key="server" android:restrictionType="string" android:title="@string/settings_server" />
+    <restriction android:key="token" android:restrictionType="string" android:title="@string/settings_token" />
+    <restriction android:key="name" android:restrictionType="string" android:title="@string/settings_name" />
+    <restriction android:key="contacts" android:restrictionType="string" android:title="@string/settings_contacts" android:description="@string/mdm_contacts_help" />
+    <restriction android:key="checkin" android:restrictionType="integer" android:title="@string/settings_check_in" android:defaultValue="30" />
+    <restriction android:key="prealarm" android:restrictionType="integer" android:title="@string/settings_pre_alarm" android:defaultValue="30" />
+    <restriction android:key="immobility" android:restrictionType="integer" android:title="@string/settings_immobility" android:defaultValue="120" />
+    <restriction android:key="fall" android:restrictionType="bool" android:title="@string/settings_fall" android:defaultValue="true" />
+    <restriction android:key="sensitivity" android:restrictionType="choice" android:title="@string/settings_sensitivity" android:entries="@array/sensitivity_labels" android:entryValues="@array/sensitivity_values" android:defaultValue="NORMAL" />
+    <restriction android:key="call" android:restrictionType="bool" android:title="@string/settings_call" android:defaultValue="false" />
+    <restriction android:key="powersos" android:restrictionType="bool" android:title="@string/settings_power_sos" android:defaultValue="true" />
+</restrictions>

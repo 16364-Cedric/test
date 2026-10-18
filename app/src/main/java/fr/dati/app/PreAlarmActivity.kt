@@ -11,10 +11,12 @@ import android.os.Looper
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import fr.dati.app.databinding.ActivityPreAlarmBinding
+import fr.dati.core.AlarmReason
 import fr.dati.core.DatiState
 import kotlinx.coroutines.launch
 
@@ -47,7 +49,13 @@ class PreAlarmActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                DatiStatus.state.collect { onState(it) }
+                launch { DatiStatus.state.collect { onState(it) } }
+                launch {
+                    DatiStatus.ackedBy.collect { by ->
+                        binding.ackText.isVisible = by != null
+                        binding.ackText.text = by?.let { getString(R.string.acked_by, it) }
+                    }
+                }
             }
         }
     }
@@ -95,6 +103,7 @@ class PreAlarmActivity : AppCompatActivity() {
     private fun maybeCallFirstContact(state: DatiState.Alarm) {
         val settings = DatiSettings(this)
         val number = settings.contacts.firstOrNull() ?: return
+        if (state.reason == AlarmReason.TEST) return
         if (!settings.callFirstContact || DatiStatus.lastCalledAlarmAt == state.triggeredAtMs) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) return
 

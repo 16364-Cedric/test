@@ -46,20 +46,33 @@ function send(res, status, body, headers = {}) {
   res.end(isJson ? JSON.stringify(body) : body);
 }
 
-/** Lien dati://config encodé dans le QR code scanné par le salarié. */
-export function buildConfigUrl({ publicUrl, token, name, settings = {} }) {
+function configParams({ publicUrl, token, name, settings = {} }) {
   const params = new URLSearchParams({ server: publicUrl, token, name });
   for (const key of CONFIG_KEYS) {
     const value = settings[key];
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
   }
-  return `dati://config?${params}`;
+  return params;
+}
+
+/** Lien dati://config, ouvert directement par l'application. */
+export function buildConfigUrl(options) {
+  return `dati://config?${configParams(options)}`;
+}
+
+/**
+ * Lien https encodé dans le QR code : tous les appareils photo savent l'ouvrir. La page renvoie
+ * vers l'application ; les paramètres sont dans le fragment (#), jamais transmis au serveur.
+ */
+export function buildEnrollUrl(options) {
+  return `${options.publicUrl}/c#${configParams(options)}`;
 }
 
 export function createHandler({ supervisor, adminPassword, publicUrl, consoleHtml }) {
   if (!adminPassword) throw new Error('ADMIN_PASSWORD est obligatoire');
   const html = consoleHtml ?? readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
   const qrScript = readFileSync(new URL('../public/vendor/qrcode.js', import.meta.url), 'utf8');
+  const enrollHtml = readFileSync(new URL('../public/enroll.html', import.meta.url), 'utf8');
 
   function requireAdmin(req) {
     const header = req.headers.authorization ?? '';
@@ -86,6 +99,7 @@ export function createHandler({ supervisor, adminPassword, publicUrl, consoleHtm
     const method = req.method;
 
     if (method === 'GET' && path === '/healthz') return send(res, 200, { ok: true });
+    if (method === 'GET' && path === '/c') return send(res, 200, enrollHtml);
     if (method === 'GET' && path === '/vendor/qrcode.js') {
       return send(res, 200, qrScript, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'max-age=86400' });
     }
@@ -125,8 +139,8 @@ export function createHandler({ supervisor, adminPassword, publicUrl, consoleHtm
           throw new HttpError(400, e.message);
         }
         const { tokenHash, lastLocation, ...device } = created.device;
-        const configUrl = buildConfigUrl({ publicUrl, token: created.token, name: device.name, settings: body.settings });
-        return send(res, 201, { device, configUrl });
+        const options = { publicUrl, token: created.token, name: device.name, settings: body.settings };
+        return send(res, 201, { device, configUrl: buildConfigUrl(options), enrollUrl: buildEnrollUrl(options) });
       }
       if (method === 'DELETE' && rest[0] === 'devices' && rest.length === 2) {
         return supervisor.deleteDevice(rest[1]) ? send(res, 204, '') : send(res, 404, { error: 'Appareil introuvable' });

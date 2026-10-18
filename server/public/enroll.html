@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Configurer DATI</title>
+  <style>
+    :root { --bg: #fafaf9; --text: #1c1917; --muted: #57534e; --red: #c62828; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #1c1917; --text: #f5f5f4; --muted: #a8a29e; } }
+    body { margin: 0; padding: 32px 16px; font: 17px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center; }
+    main { max-width: 440px; margin: 0 auto; }
+    a.button { display: block; margin: 28px 0; padding: 18px; border-radius: 10px; background: var(--red); color: #fff; font-weight: 700; text-decoration: none; font-size: 19px; }
+    p { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Configurer l'application DATI</h1>
+    <p id="who"></p>
+    <a class="button" id="open" href="#">Ouvrir dans DATI</a>
+    <p>L'application doit déjà être installée. Elle vous demandera de confirmer avant d'appliquer la configuration.</p>
+    <p id="error" hidden>Lien incomplet : demandez un nouveau QR code à votre responsable.</p>
+  </main>
+  <script>
+    // Les paramètres (dont la clé de l'appareil) sont dans le fragment de l'adresse : ils ne quittent pas le téléphone.
+    const query = location.hash.slice(1);
+    const params = new URLSearchParams(query);
+    if (!params.get('token')) {
+      document.getElementById('open').hidden = true;
+      document.getElementById('error').hidden = false;
+    } else {
+      document.getElementById('open').href = `dati://config?${query}`;
+      if (params.get('name')) document.getElementById('who').textContent = `Téléphone de ${params.get('name')}`;
+    }
+  </script>
+</body>
+</html>

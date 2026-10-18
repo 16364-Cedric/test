@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="sensitivity_labels">
+        <item>@string/sensitivity_low</item>
+        <item>@string/sensitivity_normal</item>
+        <item>@string/sensitivity_high</item>
+    </string-array>
+    <string-array name="sensitivity_values" translatable="false">
+        <item>LOW</item>
+        <item>NORMAL</item>
+        <item>HIGH</item>
+    </string-array>
+</resources>

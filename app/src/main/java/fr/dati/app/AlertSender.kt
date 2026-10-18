@@ -20,7 +20,11 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Prévient les contacts par SMS, avec la position GPS. */
-class AlertSender(private val context: Context, private val settings: DatiSettings) {
+class AlertSender(
+    private val context: Context,
+    private val settings: DatiSettings,
+    private val log: EventLog,
+) {
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val handler = Handler(Looper.getMainLooper())
     private var pendingListener: LocationListener? = null
@@ -31,9 +35,9 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
      */
     fun sendAlert(reason: AlarmReason) {
         val last = lastKnownLocation()
-        val where = last?.let(::describe) ?: context.getString(R.string.sms_position_unknown)
         val time = DateFormat.getTimeFormat(context).format(Date())
-        sendSms(context.getString(R.string.sms_alert, name(), reason.label(context), time, where))
+        val template = if (reason == AlarmReason.TEST) R.string.sms_test else R.string.sms_alert
+        sendSms(context.getString(template, name(), reason.label(context), time, where(last)))
 
         requestFreshLocation { fresh ->
             if (last == null || fresh.time > last.time) {
@@ -42,9 +46,22 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
         }
     }
 
-    fun sendAllClear() {
+    /** Rappel envoyé régulièrement tant que l'alarme n'est pas arrêtée. */
+    fun sendReminder() {
+        sendSms(context.getString(R.string.sms_reminder, name(), where(lastKnownLocation())))
+    }
+
+    fun sendAllClear(wasTest: Boolean) {
         cancel()
-        sendSms(context.getString(R.string.sms_all_clear, name()))
+        sendSms(context.getString(if (wasTest) R.string.sms_test_end else R.string.sms_all_clear, name()))
+    }
+
+    fun sendLowBattery(percent: Int) {
+        sendSms(context.getString(R.string.sms_low_battery, name(), percent, where(lastKnownLocation())))
+    }
+
+    fun sendShutdown() {
+        sendSms(context.getString(R.string.sms_shutdown, name(), where(lastKnownLocation())))
     }
 
     fun cancel() {
@@ -53,7 +70,17 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
         handler.removeCallbacksAndMessages(null)
     }
 
+    @SuppressLint("MissingPermission")
+    fun lastKnownLocation(): Location? {
+        if (!hasLocationPermission()) return null
+        return locationManager.getProviders(true)
+            .mapNotNull { runCatching { locationManager.getLastKnownLocation(it) }.getOrNull() }
+            .maxByOrNull { it.time }
+    }
+
     private fun name() = settings.displayName(context)
+
+    private fun where(location: Location?) = location?.let(::describe) ?: context.getString(R.string.sms_position_unknown)
 
     private fun describe(location: Location): String {
         val coordinates = String.format(Locale.US, "%.6f,%.6f", location.latitude, location.longitude)
@@ -66,14 +93,6 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
 
     private fun hasLocationPermission() =
         isGranted(Manifest.permission.ACCESS_FINE_LOCATION) || isGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
-
-    @SuppressLint("MissingPermission")
-    private fun lastKnownLocation(): Location? {
-        if (!hasLocationPermission()) return null
-        return locationManager.getProviders(true)
-            .mapNotNull { runCatching { locationManager.getLastKnownLocation(it) }.getOrNull() }
-            .maxByOrNull { it.time }
-    }
 
     @SuppressLint("MissingPermission")
     private fun requestFreshLocation(onLocation: (Location) -> Unit) {
@@ -92,8 +111,10 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
     }
 
     private fun sendSms(text: String) {
+        val contacts = settings.contacts
+        if (contacts.isEmpty()) return
         if (!isGranted(Manifest.permission.SEND_SMS)) {
-            Log.w(TAG, "Permission SMS refusée, alerte non envoyée")
+            log.add("SMS non envoyé : autorisation refusée")
             return
         }
         val smsManager: SmsManager =
@@ -104,13 +125,17 @@ class AlertSender(private val context: Context, private val settings: DatiSettin
                 SmsManager.getDefault()
             }
         val parts = smsManager.divideMessage(text)
-        for (number in settings.contacts) {
+        var sent = 0
+        for (number in contacts) {
             try {
                 smsManager.sendMultipartTextMessage(number, null, parts, null, null)
+                sent++
             } catch (e: Exception) {
                 Log.e(TAG, "Échec de l'envoi du SMS à $number", e)
+                log.add("Échec du SMS vers $number : ${e.message}")
             }
         }
+        log.add("SMS envoyé à $sent/${contacts.size} contact(s) : ${text.take(60)}…")
     }
 
     private companion object {

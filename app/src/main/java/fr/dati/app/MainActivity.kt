@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import fr.dati.app.databinding.ActivityMainBinding
 import fr.dati.core.DatiState
+import fr.dati.core.DeploymentConfig
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -55,12 +56,68 @@ class MainActivity : AppCompatActivity() {
             true
         }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        binding.testButton.setOnClickListener { confirmTest() }
+        binding.journalButton.setOnClickListener { startActivity(Intent(this, JournalActivity::class.java)) }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                DatiStatus.state.collect { render(it) }
+                launch { DatiStatus.state.collect { render(it) } }
+                launch { DatiStatus.ackedBy.collect { render(DatiStatus.state.value) } }
             }
         }
+        handleConfigLink(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleConfigLink(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (ManagedConfig.apply(this, settings) && DatiStatus.state.value != DatiState.Idle) {
+            DatiService.send(this, DatiService.ACTION_RELOAD)
+        }
+        renderChecks()
+    }
+
+    /** Lien `dati://config?…` ouvert depuis le QR code d'enrôlement. */
+    private fun handleConfigLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme != "dati" || uri.host != "config") return
+        intent.data = null
+        val config = try {
+            DeploymentConfig.fromQuery(uri.encodedQuery.orEmpty())
+        } catch (e: IllegalArgumentException) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.config_invalid_title)
+                .setMessage(e.message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+        if (config.isEmpty) return
+
+        val summary = buildList {
+            config.userName?.let { add(getString(R.string.config_summary_name, it)) }
+            config.serverUrl?.let { add(getString(R.string.config_summary_server, Uri.parse(it).host ?: it)) }
+            config.contacts?.let { add(getString(R.string.config_summary_contacts, it.joinToString(", "))) }
+            config.checkInMinutes?.let { add(getString(R.string.config_summary_check_in, it)) }
+            config.immobilitySeconds?.let { add(getString(R.string.config_summary_immobility, it)) }
+        }.joinToString("\n")
+        AlertDialog.Builder(this)
+            .setTitle(R.string.config_confirm_title)
+            .setMessage(getString(R.string.config_confirm_message, summary))
+            .setPositiveButton(R.string.config_apply) { _, _ ->
+                settings.apply(config)
+                EventLog(this).add("Configuration d'entreprise appliquée")
+                if (DatiStatus.state.value != DatiState.Idle) DatiService.send(this, DatiService.ACTION_RELOAD)
+                Toast.makeText(this, R.string.config_applied, Toast.LENGTH_SHORT).show()
+                render(DatiStatus.state.value)
+                renderChecks()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     override fun onStart() {
@@ -90,17 +147,30 @@ class MainActivity : AppCompatActivity() {
                 ?: getString(R.string.detail_no_check_in)
             is DatiState.PreAlarm ->
                 getString(R.string.detail_prealarm, state.reason.label(this), formatDuration(state.deadlineMs - now))
-            is DatiState.Alarm -> getString(R.string.alarm_sent, state.reason.label(this))
+            is DatiState.Alarm -> DatiStatus.ackedBy.value?.let { getString(R.string.acked_by, it) }
+                ?: getString(R.string.alarm_sent, state.reason.label(this))
         }
 
         val active = state != DatiState.Idle
         binding.toggleButton.setText(if (active) R.string.stop_monitoring else R.string.start_monitoring)
         binding.okButton.isEnabled = active
-        binding.contactsWarning.isVisible = settings.contacts.isEmpty()
+        binding.testButton.isEnabled = state is DatiState.Monitoring
+        binding.contactsWarning.isVisible = settings.contacts.isEmpty() && !settings.serverConfigured
+    }
+
+    private fun renderChecks() {
+        val issues = SelfCheck.run(this, settings)
+        binding.checksText.text = if (issues.isEmpty()) {
+            getString(R.string.check_all_good)
+        } else {
+            issues.joinToString("\n") { issue ->
+                (if (issue.severity == SelfCheck.Severity.ERROR) "⛔ " else "⚠️ ") + issue.message
+            }
+        }
     }
 
     private fun requestStart() {
-        if (settings.contacts.isEmpty()) {
+        if (settings.contacts.isEmpty() && !settings.serverConfigured) {
             Toast.makeText(this, R.string.error_no_contacts, Toast.LENGTH_LONG).show()
             startActivity(Intent(this, SettingsActivity::class.java))
             return
@@ -108,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         val permissions = buildList {
             add(Manifest.permission.ACCESS_FINE_LOCATION)
             add(Manifest.permission.ACCESS_COARSE_LOCATION)
-            add(Manifest.permission.SEND_SMS)
+            if (settings.contacts.isNotEmpty()) add(Manifest.permission.SEND_SMS)
             if (settings.callFirstContact) add(Manifest.permission.CALL_PHONE)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -123,7 +193,8 @@ class MainActivity : AppCompatActivity() {
             isGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
         val notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             isGranted(Manifest.permission.POST_NOTIFICATIONS)
-        if (!location || !notifications || !isGranted(Manifest.permission.SEND_SMS)) {
+        val sms = settings.contacts.isEmpty() || isGranted(Manifest.permission.SEND_SMS)
+        if (!location || !notifications || !sms) {
             AlertDialog.Builder(this)
                 .setTitle(R.string.permissions_title)
                 .setMessage(R.string.permissions_message)
@@ -136,6 +207,7 @@ class MainActivity : AppCompatActivity() {
         }
         DatiService.start(this)
         promptSystemSettings()
+        renderChecks()
     }
 
     /** Propose les réglages système dont dépend la fiabilité de l'alarme. */
@@ -164,6 +236,15 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setMessage(R.string.confirm_stop)
             .setPositiveButton(R.string.stop_monitoring) { _, _ -> DatiService.send(this, DatiService.ACTION_STOP) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun confirmTest() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.test_title)
+            .setMessage(R.string.test_message)
+            .setPositiveButton(R.string.test_start) { _, _ -> DatiService.send(this, DatiService.ACTION_TEST) }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
     }

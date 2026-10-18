@@ -11,13 +11,35 @@ android {
         applicationId = "fr.dati.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
+        versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        // Clé de debug versionnée : tous les APK de debug ont la même signature, les mises à jour
+        // s'installent donc sans désinstaller. Elle est publique : ne pas l'utiliser en production.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        // Clé de production, fournie par les secrets de la CI (voir docs/deploiement.md).
+        val releaseKeystore = System.getenv("DATI_KEYSTORE_FILE")
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("DATI_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("DATI_KEY_ALIAS")
+                keyPassword = System.getenv("DATI_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

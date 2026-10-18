@@ -35,7 +35,10 @@ test('full flow: enrol a phone, raise an alarm, acknowledge it', async () => {
     headers: { ...admin, 'Content-Type': 'application/json' },
   });
   assert.equal(created.status, 201);
-  const { configUrl } = await created.json();
+  const { configUrl, enrollUrl } = await created.json();
+  assert.ok(enrollUrl.startsWith('https://dati.example/c#server='));
+  assert.equal(enrollUrl.split('#')[1], configUrl.split('?')[1]);
+  assert.equal((await fetch(`${base}/c`)).status, 200, 'la page d\'enrôlement est publique');
   const params = new URL(configUrl.replace('dati://', 'http://')).searchParams;
   assert.equal(params.get('server'), 'https://dati.example');
   assert.equal(params.get('contacts'), '+33600000000');

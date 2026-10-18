@@ -3,6 +3,8 @@ package fr.dati.app
 import android.content.Context
 import androidx.core.content.edit
 import fr.dati.core.DatiConfig
+import fr.dati.core.DeploymentConfig
+import fr.dati.core.FallSensitivity
 
 /** Préférences de l'utilisateur, stockées localement sur le téléphone. */
 class DatiSettings(context: Context) {
@@ -39,12 +41,52 @@ class DatiSettings(context: Context) {
         get() = prefs.getBoolean(KEY_CALL, false)
         set(value) = prefs.edit { putBoolean(KEY_CALL, value) }
 
+    var fallSensitivity: FallSensitivity
+        get() = FallSensitivity.entries.find { it.name == prefs.getString(KEY_SENSITIVITY, null) } ?: FallSensitivity.NORMAL
+        set(value) = prefs.edit { putString(KEY_SENSITIVITY, value.name) }
+
+    /** SOS par appuis rapides sur le bouton marche/arrêt. */
+    var powerButtonSos: Boolean
+        get() = prefs.getBoolean(KEY_POWER_SOS, true)
+        set(value) = prefs.edit { putBoolean(KEY_POWER_SOS, value) }
+
+    /** Adresse du serveur de supervision, vide si l'entreprise n'en utilise pas. */
+    var serverUrl: String
+        get() = prefs.getString(KEY_SERVER, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_SERVER, value.trim().trimEnd('/')) }
+
+    var deviceToken: String
+        get() = prefs.getString(KEY_TOKEN, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_TOKEN, value.trim()) }
+
+    val serverConfigured: Boolean get() = serverUrl.isNotBlank() && deviceToken.isNotBlank()
+
+    /** Heure (horloge murale) du dernier essai complet de la chaîne d'alerte, 0 si jamais. */
+    var lastTestAt: Long
+        get() = prefs.getLong(KEY_LAST_TEST, 0L)
+        set(value) = prefs.edit { putLong(KEY_LAST_TEST, value) }
+
     /** Vrai tant que l'utilisateur n'a pas arrêté la surveillance (permet la reprise après un redémarrage du service). */
     var monitoringActive: Boolean
         get() = prefs.getBoolean(KEY_ACTIVE, false)
         set(value) = prefs.edit { putBoolean(KEY_ACTIVE, value) }
 
     fun displayName(context: Context): String = userName.ifBlank { context.getString(R.string.default_user_name) }
+
+    /** Applique une configuration d'entreprise ; les champs absents ne changent pas. */
+    fun apply(config: DeploymentConfig) {
+        config.serverUrl?.let { serverUrl = it }
+        config.token?.let { deviceToken = it }
+        config.userName?.let { userName = it }
+        config.contacts?.let { contacts = it }
+        config.checkInMinutes?.let { checkInMinutes = it }
+        config.preAlarmSeconds?.let { preAlarmSeconds = it }
+        config.immobilitySeconds?.let { immobilitySeconds = it }
+        config.fallDetection?.let { fallDetection = it }
+        config.fallSensitivity?.let { fallSensitivity = it }
+        config.callFirstContact?.let { callFirstContact = it }
+        config.powerButtonSos?.let { powerButtonSos = it }
+    }
 
     fun toConfig() = DatiConfig(
         checkInIntervalMs = checkInMinutes.takeIf { it > 0 }?.let { it * 60_000L },
@@ -62,5 +104,10 @@ class DatiSettings(context: Context) {
         private const val KEY_FALL = "fall_detection"
         private const val KEY_CALL = "call_first_contact"
         private const val KEY_ACTIVE = "monitoring_active"
+        private const val KEY_SENSITIVITY = "fall_sensitivity"
+        private const val KEY_POWER_SOS = "power_button_sos"
+        private const val KEY_SERVER = "server_url"
+        private const val KEY_TOKEN = "device_token"
+        private const val KEY_LAST_TEST = "last_test_at"
     }
 }

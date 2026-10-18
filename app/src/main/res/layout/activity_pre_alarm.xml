@@ -36,6 +36,19 @@
         android:textSize="48sp"
         android:textStyle="bold" />
 
+    <TextView
+        android:id="@+id/ackText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@color/white"
+        android:gravity="center"
+        android:padding="12dp"
+        android:textColor="@color/dati_green"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/okButton"
         android:layout_width="match_parent"

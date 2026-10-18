@@ -94,6 +94,7 @@
         <div>
           <p><strong>À scanner avec l'appareil photo du téléphone du salarié</strong>, après avoir installé l'application DATI. Le téléphone demande confirmation avant d'appliquer la configuration.</p>
           <p>Ce QR code contient la clé secrète de l'appareil : il n'est affiché qu'une seule fois. Ne le diffusez pas.</p>
+          <p>Si le téléphone ne propose pas d'ouvrir le lien, copiez le lien ci-dessous dans DATI → Réglages → « Lien de configuration ».</p>
           <details><summary>Lien de configuration</summary><code id="config-url"></code></details>
         </div>
       </div>
@@ -215,11 +216,11 @@
         sensitivity: form.get('sensitivity'),
       };
       try {
-        const { configUrl } = await api('devices', { method: 'POST', body: JSON.stringify({ name: form.get('name'), settings }) });
+        const { configUrl, enrollUrl } = await api('devices', { method: 'POST', body: JSON.stringify({ name: form.get('name'), settings }) });
         const qr = document.getElementById('qr');
         qr.replaceChildren();
         const code = qrcode(0, 'M');
-        code.addData(configUrl);
+        code.addData(enrollUrl);
         code.make();
         qr.append(el('img', { src: code.createDataURL(5, 2), alt: 'QR code de configuration' }));
         document.getElementById('config-url').textContent = configUrl;

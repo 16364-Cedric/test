@@ -21,6 +21,7 @@ import java.util.Date
 object Notifications {
     const val MONITORING_ID = 1
     private const val ALARM_ID = 2
+    private const val INFO_ID = 3
     private const val CHANNEL_MONITORING = "monitoring"
     private const val CHANNEL_ALARM = "alarm"
 
@@ -67,7 +68,7 @@ object Notifications {
     }
 
     /** Affiche la pré-alarme ou l'alarme en plein écran, y compris sur l'écran de verrouillage. */
-    fun showAlarm(context: Context, state: DatiState) {
+    fun showAlarm(context: Context, state: DatiState, ackedBy: String? = null) {
         val fullScreen = activityIntent(context, PreAlarmActivity::class.java)
         val builder = NotificationCompat.Builder(context, CHANNEL_ALARM)
             .setSmallIcon(R.drawable.ic_notification)
@@ -88,10 +89,30 @@ object Notifications {
                 .setWhen(toWallTime(state.deadlineMs))
             is DatiState.Alarm -> builder
                 .setContentTitle(context.getString(R.string.alarm_title))
-                .setContentText(context.getString(R.string.alarm_sent, state.reason.label(context)))
+                .setContentText(
+                    ackedBy?.let { context.getString(R.string.acked_by, it) }
+                        ?: context.getString(R.string.alarm_sent, state.reason.label(context))
+                )
             else -> return
         }
         notify(context, ALARM_ID, builder.build())
+    }
+
+    /** Avertissement ponctuel (batterie faible…), sans plein écran. */
+    fun showInfo(context: Context, title: String, text: String) {
+        notify(
+            context,
+            INFO_ID,
+            NotificationCompat.Builder(context, CHANNEL_ALARM)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(activityIntent(context, MainActivity::class.java))
+                .setAutoCancel(true)
+                .build(),
+        )
     }
 
     fun cancelAlarm(context: Context) {

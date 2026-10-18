@@ -20,11 +20,11 @@
     <string name="sos_requires_monitoring">Démarrez d\'abord la protection pour pouvoir lancer un SOS.</string>
     <string name="settings">Réglages</string>
     <string name="confirm_stop">Arrêter la protection ? Plus aucune alerte ne sera envoyée.</string>
-    <string name="contacts_warning">Aucun contact d\'urgence configuré : ouvrez les réglages.</string>
+    <string name="contacts_warning">Aucun contact d\'urgence ni serveur de supervision configuré : ouvrez les réglages.</string>
     <string name="disclaimer">Cette application ne remplace pas un dispositif DATI certifié ni l\'organisation des secours prévue par l\'employeur. Testez-la régulièrement avec vos contacts.</string>
 
     <!-- Permissions et réglages système -->
-    <string name="error_no_contacts">Ajoutez au moins un contact d\'urgence.</string>
+    <string name="error_no_contacts">Ajoutez au moins un contact d\'urgence ou configurez le serveur de supervision.</string>
     <string name="permissions_title">Autorisations nécessaires</string>
     <string name="permissions_message">Le DATI a besoin de la localisation, de l\'envoi de SMS et des notifications pour pouvoir prévenir vos contacts en cas de problème.</string>
     <string name="open_settings">Ouvrir les réglages</string>
@@ -42,6 +42,8 @@
     <string name="reason_immobility">Absence de mouvement</string>
     <string name="reason_missed_check_in">Confirmation de présence manquée</string>
     <string name="reason_sos">Appel SOS</string>
+    <string name="reason_test">Essai</string>
+    <string name="acked_by">✅ Pris en charge par %1$s – les secours arrivent.</string>
 
     <!-- Notifications -->
     <string name="channel_monitoring">Surveillance en cours</string>
@@ -57,6 +59,11 @@
     <string name="sms_position_unknown">Position inconnue.</string>
     <string name="sms_position_update">DATI – %1$s, position mise à jour : %2$s</string>
     <string name="sms_all_clear">DATI : %1$s a arrêté l\'alarme et indique aller bien.</string>
+    <string name="sms_test">[ESSAI DATI – aucune action requise] Alerte de test envoyée par %1$s (%2$s) à %3$s. %4$s Merci de confirmer la bonne réception.</string>
+    <string name="sms_test_end">[ESSAI DATI] Fin de l\'essai de %1$s.</string>
+    <string name="sms_reminder">ALERTE DATI toujours en cours : %1$s n\'a pas arrêté l\'alarme. %2$s</string>
+    <string name="sms_low_battery">DATI : la batterie du téléphone de %1$s est à %2$d %%, la protection risque de s\'arrêter. %3$s</string>
+    <string name="sms_shutdown">DATI : le téléphone de %1$s s\'éteint alors que la protection est active. %2$s</string>
 
     <!-- Réglages -->
     <string name="settings_title">Réglages</string>
@@ -74,4 +81,63 @@
     <string name="settings_save">Enregistrer</string>
     <string name="settings_saved">Réglages enregistrés</string>
     <string name="error_invalid_number">Numéro invalide : %1$s</string>
+    <string name="error_server_https">L\'adresse doit commencer par https://</string>
+    <string name="settings_sensitivity">Sensibilité de la détection de chute</string>
+    <string name="sensitivity_low">Faible</string>
+    <string name="sensitivity_normal">Normale</string>
+    <string name="sensitivity_high">Élevée</string>
+    <string name="settings_power_sos">SOS par 4 appuis rapides sur le bouton marche/arrêt</string>
+    <string name="settings_supervision">Supervision d\'entreprise</string>
+    <string name="settings_server">Serveur de supervision</string>
+    <string name="settings_server_help">Fourni par votre entreprise (https://…). Laisser vide sans serveur.</string>
+    <string name="settings_token">Clé de l\'appareil</string>
+    <string name="settings_link">Lien de configuration</string>
+    <string name="settings_link_hint">Coller le lien fourni par votre responsable</string>
+    <string name="settings_link_help">À utiliser si le QR code n\'ouvre pas l\'application.</string>
+    <string name="mdm_contacts_help">Numéros séparés par des virgules</string>
+
+    <!-- Vérifications -->
+    <string name="checks_title">Vérifications</string>
+    <string name="check_all_good">✅ Tout est prêt.</string>
+    <string name="check_no_recipient">Aucun contact d\'urgence ni serveur : personne ne serait prévenu.</string>
+    <string name="check_location_permission">Localisation non autorisée : la position ne sera pas envoyée.</string>
+    <string name="check_sms_permission">Envoi de SMS non autorisé.</string>
+    <string name="check_notification_permission">Notifications non autorisées : la pré-alarme ne pourra pas s\'afficher.</string>
+    <string name="check_call_permission">Appels non autorisés : le premier contact ne sera pas appelé.</string>
+    <string name="check_no_accelerometer">Ce téléphone n\'a pas d\'accéléromètre : chutes et immobilité non détectées.</string>
+    <string name="check_no_gyroscope">Pas de gyroscope : détection d\'immobilité moins précise.</string>
+    <string name="check_full_screen">Alarme plein écran non autorisée : la pré-alarme peut passer inaperçue écran verrouillé.</string>
+    <string name="check_battery_optimization">Optimisation de batterie active : Android peut suspendre la surveillance.</string>
+    <string name="check_location_disabled">Localisation désactivée dans les réglages du téléphone.</string>
+    <string name="check_server_unreachable">Serveur de supervision injoignable lors du dernier échange.</string>
+    <string name="check_never_tested">Aucun essai réalisé : lancez un essai avec vos contacts.</string>
+    <string name="check_test_old">Dernier essai il y a %1$d jours : refaites un essai.</string>
+
+    <!-- Essai -->
+    <string name="test_button">Lancer un essai</string>
+    <string name="test_title">Essai de la chaîne d\'alerte</string>
+    <string name="test_message">Une pré-alarme va se déclencher. Laissez-la aller jusqu\'au bout : vos contacts et le superviseur recevront une alerte marquée ESSAI. Arrêtez ensuite l\'alarme et vérifiez avec eux qu\'ils l\'ont bien reçue.</string>
+    <string name="test_start">Démarrer l\'essai</string>
+
+    <!-- Journal -->
+    <string name="journal_title">Journal</string>
+    <string name="journal_empty">Aucun événement enregistré.</string>
+    <string name="journal_clear">Effacer le journal</string>
+    <string name="journal_clear_confirm">Effacer tout le journal ?</string>
+
+    <!-- Configuration d\'entreprise -->
+    <string name="config_invalid_title">Configuration refusée</string>
+    <string name="config_confirm_title">Appliquer la configuration ?</string>
+    <string name="config_confirm_message">Votre entreprise propose de configurer DATI :\n\n%1$s\n\nN\'acceptez que si ce QR code vous a été remis par votre responsable.</string>
+    <string name="config_summary_name">Nom : %1$s</string>
+    <string name="config_summary_server">Serveur : %1$s</string>
+    <string name="config_summary_contacts">Contacts SMS : %1$s</string>
+    <string name="config_summary_check_in">Confirmation de présence : %1$d min</string>
+    <string name="config_summary_immobility">Alarme d\'immobilité : %1$d s</string>
+    <string name="config_apply">Appliquer</string>
+    <string name="config_applied">Configuration appliquée</string>
+
+    <!-- Batterie -->
+    <string name="low_battery_title">Batterie faible</string>
+    <string name="low_battery_text">Batterie à %1$d %% : rechargez le téléphone, sinon la protection s\'arrêtera.</string>
 </resources>
