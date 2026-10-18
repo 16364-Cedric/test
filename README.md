@@ -8,25 +8,42 @@ si elle ne donne plus signe de vie.
 
 | Déclencheur | Détection |
 |---|---|
-| **Chute** | chute libre suivie d'un choc (accéléromètre) |
+| **Chute** | chute libre suivie d'un choc (accéléromètre), sensibilité réglable |
 | **Immobilité** | ni secousse, ni changement d'orientation (accéléromètre), ni rotation (gyroscope) pendant la durée réglée (2 min par défaut) |
 | **Confirmation manquée** | l'utilisateur doit appuyer sur « Je vais bien » à intervalle régulier (30 min par défaut) |
-| **SOS** | appui long sur le bouton SOS : alarme immédiate |
+| **SOS** | appui long sur le bouton SOS, ou **4 appuis rapides sur le bouton marche/arrêt** sans regarder l'écran : alarme immédiate |
+| **Perte de contact** *(avec serveur)* | le téléphone ne donne plus de nouvelles pendant 15 min (batterie vide, casse, pas de réseau) |
 
 1. Un événement déclenche une **pré-alarme** : le téléphone sonne et vibre, et un écran plein
    s'affiche même téléphone verrouillé, avec un compte à rebours (30 s par défaut).
 2. Si l'utilisateur n'appuie pas sur **« Je vais bien »** à temps, l'**alarme** part :
-   - un SMS est envoyé à chaque contact avec la cause, l'heure et un lien Google Maps vers la position ;
-   - un second SMS suit dès qu'une position GPS fraîche est disponible ;
+   - vers le **serveur de supervision** de l'entreprise : alerte dans la console et notification
+     des référents (ntfy, Teams, Slack…), escalade si personne ne la prend en charge ;
+   - et/ou par **SMS** aux contacts, avec un lien Google Maps vers la position, puis un rappel
+     toutes les 5 minutes ;
    - en option, le premier contact est appelé automatiquement ;
    - la sonnerie continue pour alerter les personnes à proximité.
-3. Quand l'utilisateur arrête l'alarme, les contacts reçoivent un SMS « tout va bien ».
+3. Quand un référent clique sur **« Je prends en charge »**, son nom s'affiche sur le téléphone.
+4. Quand l'utilisateur arrête l'alarme, les contacts et la console en sont informés.
+
+Également : **auto-contrôle** sur l'écran principal (autorisations, batterie, capteurs, serveur),
+**essai guidé** de la chaîne d'alerte, alerte **batterie faible** et **extinction**, **journal**
+des événements, configuration à distance par **QR code** ou **MDM**.
 
 La surveillance tourne dans un service au premier plan (notification permanente) et continue écran éteint.
 Le GPS est suivi en continu pendant la surveillance (toutes les 30 s ou 10 m) pour que la position
 envoyée dans l'alerte soit récente. Il ne sert volontairement **pas** à détecter le mouvement : à
 l'intérieur, la position GPS dérive de plusieurs dizaines de mètres, ce qui ferait croire qu'une
 personne inconsciente bouge encore.
+
+## Déploiement en entreprise
+
+- **[Guide de déploiement](docs/deploiement.md)** : serveur de supervision (Docker), signature,
+  installation, enrôlement par QR code, MDM, réglages par fabricant, phase pilote.
+- **[Cadre juridique](docs/cadre-juridique.md)** : sécurité au travail, CSE, RGPD/CNIL, check-list.
+- Modèles : [notice d'information des salariés](docs/modeles/notice-information-salaries.md),
+  [procédure d'intervention](docs/modeles/procedure-intervention.md),
+  [fiche registre des traitements](docs/modeles/fiche-registre.md).
 
 ## Installer l'application
 
@@ -57,26 +74,33 @@ Ou en local, avec le SDK Android installé : `./gradlew :app:assembleDebug`.
 ## Structure du code
 
 ```
-core/   Logique pure Kotlin, testée sans téléphone
-        DatiStateMachine  Idle → Monitoring → PreAlarm → Alarm
-        FallDetector      chute libre + choc
-        ImmobilityDetector
-app/    Application Android
+core/    Logique pure Kotlin, testée sans téléphone
+         DatiStateMachine     Idle → Monitoring → PreAlarm → Alarm
+         FallDetector         chute libre + choc
+         ImmobilityDetector   accéléromètre + gyroscope
+         PressSequenceDetector  SOS par le bouton marche/arrêt
+         DeploymentConfig     lien de configuration / MDM
+server/  Serveur de supervision (Node.js, sans dépendance) et console web
+app/     Application Android
         DatiService       service au premier plan : capteurs, minuterie, alertes
         AlertSender       SMS + position GPS
+        ServerClient      liaison avec le serveur de supervision
+        SelfCheck         vérifications affichées sur l'écran principal
         AlarmSignal       sonnerie et vibration
         PreAlarmActivity  écran plein « Je vais bien »
         MainActivity / SettingsActivity
 ```
 
-Tests : `./gradlew :core:test`.
+Tests : `./gradlew :core:test` et `cd server && npm test`.
 
 ## Limites
 
 - **Ce n'est pas un DATI certifié.** Un smartphone n'offre pas les garanties d'un équipement dédié
   (autonomie, robustesse, réseau). L'application ne remplace ni l'évaluation des risques ni
   l'organisation des secours, qui restent à la charge de l'employeur.
-- L'alerte dépend du **réseau mobile** (SMS) : pas de couverture, pas d'alerte.
+- L'alerte dépend du **réseau mobile** : pas de couverture, pas d'alerte depuis le téléphone.
+  Avec le serveur de supervision, l'absence de nouvelles déclenche toutefois une alerte
+  « perte de contact » au bout de 15 minutes.
 - La détection de chute repose sur des seuils simples ; elle peut produire des fausses alertes
   (téléphone qui tombe) ou rater une chute lente. La pré-alarme sert à annuler les premières, le
   contrôle d'immobilité et la confirmation périodique couvrent en partie les secondes.
