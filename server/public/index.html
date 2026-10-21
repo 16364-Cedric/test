@@ -84,6 +84,8 @@
         <label>Confirmation de présence (min, 0 = non) <input name="checkin" type="number" min="0" value="30"></label>
         <label>Délai d'annulation (s) <input name="prealarm" type="number" min="10" value="30"></label>
         <label>Alarme d'immobilité (s, 0 = non) <input name="immobility" type="number" min="0" value="120"></label>
+        <label>Perte de verticalité (s, 0 = non ; téléphone porté debout) <input name="verticality" type="number" min="0" value="0"></label>
+        <label>Alerte batterie sous (%) <input name="battery" type="number" min="0" max="90" value="20"></label>
         <label>Sensibilité chute
           <select name="sensitivity"><option value="LOW">Faible</option><option value="NORMAL" selected>Normale</option><option value="HIGH">Élevée</option></select>
         </label>
@@ -213,6 +215,8 @@
         checkin: form.get('checkin'),
         prealarm: form.get('prealarm'),
         immobility: form.get('immobility'),
+        verticality: form.get('verticality'),
+        battery: form.get('battery'),
         sensitivity: form.get('sensitivity'),
       };
       try {

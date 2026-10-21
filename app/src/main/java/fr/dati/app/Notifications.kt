@@ -21,7 +21,8 @@ import java.util.Date
 object Notifications {
     const val MONITORING_ID = 1
     private const val ALARM_ID = 2
-    private const val INFO_ID = 3
+    const val BATTERY_INFO_ID = 3
+    const val NETWORK_INFO_ID = 4
     private const val CHANNEL_MONITORING = "monitoring"
     private const val CHANNEL_ALARM = "alarm"
 
@@ -99,10 +100,10 @@ object Notifications {
     }
 
     /** Avertissement ponctuel (batterie faible…), sans plein écran. */
-    fun showInfo(context: Context, title: String, text: String) {
+    fun showInfo(context: Context, id: Int, title: String, text: String) {
         notify(
             context,
-            INFO_ID,
+            id,
             NotificationCompat.Builder(context, CHANNEL_ALARM)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)
@@ -113,6 +114,10 @@ object Notifications {
                 .setAutoCancel(true)
                 .build(),
         )
+    }
+
+    fun cancelInfo(context: Context, id: Int) {
+        NotificationManagerCompat.from(context).cancel(id)
     }
 
     fun cancelAlarm(context: Context) {

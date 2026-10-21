@@ -104,6 +104,8 @@ class MainActivity : AppCompatActivity() {
             config.contacts?.let { add(getString(R.string.config_summary_contacts, it.joinToString(", "))) }
             config.checkInMinutes?.let { add(getString(R.string.config_summary_check_in, it)) }
             config.immobilitySeconds?.let { add(getString(R.string.config_summary_immobility, it)) }
+            config.verticalitySeconds?.let { add(getString(R.string.config_summary_verticality, it)) }
+            config.batteryThresholdPercent?.let { add(getString(R.string.config_summary_battery, it)) }
         }.joinToString("\n")
         AlertDialog.Builder(this)
             .setTitle(R.string.config_confirm_title)

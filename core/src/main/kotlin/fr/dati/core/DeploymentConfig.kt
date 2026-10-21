@@ -14,6 +14,8 @@ data class DeploymentConfig(
     val checkInMinutes: Int? = null,
     val preAlarmSeconds: Int? = null,
     val immobilitySeconds: Int? = null,
+    val verticalitySeconds: Int? = null,
+    val batteryThresholdPercent: Int? = null,
     val fallDetection: Boolean? = null,
     val fallSensitivity: FallSensitivity? = null,
     val callFirstContact: Boolean? = null,
@@ -29,6 +31,8 @@ data class DeploymentConfig(
         const val KEY_CHECK_IN = "checkin"
         const val KEY_PRE_ALARM = "prealarm"
         const val KEY_IMMOBILITY = "immobility"
+        const val KEY_VERTICALITY = "verticality"
+        const val KEY_BATTERY = "battery"
         const val KEY_FALL = "fall"
         const val KEY_SENSITIVITY = "sensitivity"
         const val KEY_CALL = "call"
@@ -64,9 +68,9 @@ data class DeploymentConfig(
         fun fromMap(values: Map<String, String>): DeploymentConfig {
             fun text(key: String) = values[key]?.trim()?.takeIf { it.isNotEmpty() }
 
-            fun int(key: String, min: Int) = text(key)?.let {
+            fun int(key: String, min: Int, max: Int = Int.MAX_VALUE) = text(key)?.let {
                 val n = requireNotNull(it.toIntOrNull()) { "$key : nombre attendu" }
-                require(n >= min) { "$key : doit être >= $min" }
+                require(n in min..max) { "$key : doit être compris entre $min et $max" }
                 n
             }
 
@@ -91,6 +95,8 @@ data class DeploymentConfig(
                 checkInMinutes = int(KEY_CHECK_IN, 0),
                 preAlarmSeconds = int(KEY_PRE_ALARM, 10),
                 immobilitySeconds = int(KEY_IMMOBILITY, 0),
+                verticalitySeconds = int(KEY_VERTICALITY, 0),
+                batteryThresholdPercent = int(KEY_BATTERY, 0, 90),
                 fallDetection = bool(KEY_FALL),
                 fallSensitivity = text(KEY_SENSITIVITY)?.let {
                     requireNotNull(FallSensitivity.entries.find { s -> s.name.equals(it, ignoreCase = true) }) {

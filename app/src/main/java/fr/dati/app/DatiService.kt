@@ -24,18 +24,22 @@ import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import fr.dati.core.AlarmReason
+import fr.dati.core.BatteryWatcher
 import fr.dati.core.DatiState
 import fr.dati.core.DatiStateMachine
 import fr.dati.core.FallDetector
 import fr.dati.core.ImmobilityDetector
+import fr.dati.core.NetworkLossTracker
 import fr.dati.core.PressSequenceDetector
+import fr.dati.core.VerticalityDetector
 import org.json.JSONObject
 import kotlin.math.sqrt
 
 /**
  * Service au premier plan qui surveille l'utilisateur en continu, même écran éteint :
  * accéléromètre et gyroscope (chute, immobilité), suivi GPS, échéances de confirmation,
- * bouton marche/arrêt (SOS), batterie, liaison avec le serveur de supervision, alertes.
+ * verticalité, bouton marche/arrêt (SOS), batterie, réseau, liaison avec le serveur de
+ * supervision, alertes.
  */
 class DatiService : Service(), SensorEventListener {
     private lateinit var settings: DatiSettings
@@ -45,11 +49,15 @@ class DatiService : Service(), SensorEventListener {
     private lateinit var alertSender: AlertSender
     private lateinit var server: ServerClient
     private lateinit var sensorManager: SensorManager
+    private lateinit var networkMonitor: NetworkMonitor
 
     private val handler = Handler(Looper.getMainLooper())
     private var fallDetector = FallDetector()
     private var fallDetectionEnabled = true
     private var immobilityDetector: ImmobilityDetector? = null
+    private var verticalityDetector: VerticalityDetector? = null
+    private val batteryWatcher = BatteryWatcher(thresholdPercent = 20)
+    private var networkLoss = NetworkLossTracker(NETWORK_GRACE_MS)
     private val powerButton = PressSequenceDetector(requiredPresses = 4, windowMs = 3_000)
     private var powerButtonSosEnabled = true
     private var wakeLock: PowerManager.WakeLock? = null
@@ -57,7 +65,6 @@ class DatiService : Service(), SensorEventListener {
 
     private var batteryPercent: Int? = null
     private var charging: Boolean? = null
-    private var lowBatteryWarned = false
     private var lastReminderAt = 0L
 
     // Maintient une position récente pour les SMS d'alerte (lue via getLastKnownLocation).
@@ -67,6 +74,7 @@ class DatiService : Service(), SensorEventListener {
         override fun run() {
             val now = now()
             machine.tick(now)
+            networkLoss.tick(now)?.let(::onNetworkEvent)
             val state = machine.state
             if (state is DatiState.Alarm && state.reason != AlarmReason.TEST && now - lastReminderAt >= REMINDER_INTERVAL_MS) {
                 lastReminderAt = now
@@ -93,12 +101,7 @@ class DatiService : Service(), SensorEventListener {
             val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
             batteryPercent = percent
             charging = isCharging
-            if (isCharging || percent > LOW_BATTERY_PERCENT + 5) {
-                lowBatteryWarned = false
-            } else if (percent <= LOW_BATTERY_PERCENT && !lowBatteryWarned) {
-                lowBatteryWarned = true
-                onLowBattery(percent)
-            }
+            if (batteryWatcher.onReading(percent, isCharging)) onLowBattery(percent)
         }
     }
 
@@ -131,6 +134,10 @@ class DatiService : Service(), SensorEventListener {
         alertSender = AlertSender(this, settings, log)
         server = ServerClient(settings)
         sensorManager = getSystemService(SensorManager::class.java)
+        networkMonitor = NetworkMonitor(this) { available ->
+            DatiStatus.networkAvailable = available
+            networkLoss.onStatus(now(), available)?.let(::onNetworkEvent)
+        }
         Notifications.createChannels(this)
     }
 
@@ -185,6 +192,8 @@ class DatiService : Service(), SensorEventListener {
         }
         startLocationTracking()
         registerReceivers()
+        networkLoss = NetworkLossTracker(NETWORK_GRACE_MS)
+        networkMonitor.start()
         machine.updateConfig(settings.toConfig(), now())
         machine.start(now())
         handler.post(ticker)
@@ -203,6 +212,9 @@ class DatiService : Service(), SensorEventListener {
         handler.removeCallbacks(heartbeat)
         sensorManager.unregisterListener(this)
         getSystemService(LocationManager::class.java).removeUpdates(locationTracker)
+        networkMonitor.stop()
+        DatiStatus.networkAvailable = null
+        Notifications.cancelInfo(this, Notifications.NETWORK_INFO_ID)
         if (receiversRegistered) {
             unregisterReceiver(batteryReceiver)
             unregisterReceiver(screenReceiver)
@@ -258,6 +270,8 @@ class DatiService : Service(), SensorEventListener {
         fallDetectionEnabled = settings.fallDetection
         fallDetector = FallDetector.withSensitivity(settings.fallSensitivity)
         immobilityDetector = settings.immobilitySeconds.takeIf { it > 0 }?.let { ImmobilityDetector(it * 1_000L) }
+        verticalityDetector = settings.verticalitySeconds.takeIf { it > 0 }?.let { VerticalityDetector(it * 1_000L) }
+        batteryWatcher.thresholdPercent = settings.batteryThresholdPercent
         powerButtonSosEnabled = settings.powerButtonSos
     }
 
@@ -276,6 +290,7 @@ class DatiService : Service(), SensorEventListener {
                 Notifications.updateMonitoring(this, new)
                 fallDetector.reset()
                 immobilityDetector?.reset()
+                verticalityDetector?.reset()
                 DatiStatus.publishAck(null)
                 if (old is DatiState.Alarm) alertSender.sendAllClear(wasTest = old.reason == AlarmReason.TEST)
             }
@@ -335,9 +350,50 @@ class DatiService : Service(), SensorEventListener {
 
     private fun onLowBattery(percent: Int) {
         log.add("Batterie faible : $percent %")
-        Notifications.showInfo(this, getString(R.string.low_battery_title), getString(R.string.low_battery_text, percent))
+        Notifications.showInfo(
+            this,
+            Notifications.BATTERY_INFO_ID,
+            getString(R.string.low_battery_title),
+            getString(R.string.low_battery_text, percent),
+        )
+        if (machine.state is DatiState.Monitoring) signal.buzz()
         alertSender.sendLowBattery(percent)
         server.event("low_battery", statePayload()) { }
+    }
+
+    /**
+     * Pendant une coupure, aucune alerte ne peut partir : on prévient le salarié pour qu'il
+     * retrouve du réseau. Au retour du réseau, on informe le serveur (et les contacts si la
+     * coupure a été longue) et on renvoie l'alarme en cours, qui n'a peut-être pas pu partir.
+     */
+    private fun onNetworkEvent(event: NetworkLossTracker.Event) {
+        when (event) {
+            is NetworkLossTracker.Event.Lost -> {
+                log.add("Réseau perdu : les alertes ne peuvent plus partir")
+                Notifications.showInfo(
+                    this,
+                    Notifications.NETWORK_INFO_ID,
+                    getString(R.string.network_lost_title),
+                    getString(R.string.network_lost_text),
+                )
+                if (machine.state is DatiState.Monitoring) signal.buzz()
+            }
+            is NetworkLossTracker.Event.Restored -> {
+                val minutes = event.durationMs / 60_000
+                log.add("Réseau retrouvé après $minutes min")
+                Notifications.cancelInfo(this, Notifications.NETWORK_INFO_ID)
+                server.event("network_restored", statePayload().put("durationMs", event.durationMs), ::onServerReply)
+                if (event.durationMs >= NETWORK_SMS_AFTER_MS) {
+                    alertSender.sendNetworkRestored(System.currentTimeMillis() - event.durationMs, minutes)
+                }
+                val state = machine.state
+                if (state is DatiState.Alarm && state.reason != AlarmReason.TEST) {
+                    log.add("Renvoi de l'alarme en cours après la coupure")
+                    alertSender.sendAlert(state.reason)
+                    lastReminderAt = now()
+                }
+            }
+        }
     }
 
     /** État envoyé au serveur ; la position n'y est affichée qu'en cas d'alerte. */
@@ -386,6 +442,8 @@ class DatiService : Service(), SensorEventListener {
                         machine.onDetection(AlarmReason.FALL, now())
                     immobilityDetector?.onAcceleration(timestampMs, x / g, y / g, z / g) == true ->
                         machine.onDetection(AlarmReason.IMMOBILITY, now())
+                    verticalityDetector?.onAcceleration(timestampMs, x / g, y / g, z / g) == true ->
+                        machine.onDetection(AlarmReason.LOSS_OF_VERTICALITY, now())
                 }
             }
             Sensor.TYPE_GYROSCOPE ->
@@ -414,7 +472,8 @@ class DatiService : Service(), SensorEventListener {
         private const val HEARTBEAT_MS = 5 * 60_000L
         private const val URGENT_HEARTBEAT_MS = 30_000L
         private const val REMINDER_INTERVAL_MS = 5 * 60_000L
-        private const val LOW_BATTERY_PERCENT = 15
+        private const val NETWORK_GRACE_MS = 60_000L
+        private const val NETWORK_SMS_AFTER_MS = 15 * 60_000L
 
         /** Horloge monotone utilisée par la machine à états (insensible aux changements d'heure). */
         fun now(): Long = SystemClock.elapsedRealtime()

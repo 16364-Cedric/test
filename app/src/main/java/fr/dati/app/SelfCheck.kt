@@ -53,6 +53,7 @@ object SelfCheck {
         if (!LocationManagerCompat.isLocationEnabled(context.getSystemService(LocationManager::class.java))) {
             warning(R.string.check_location_disabled)
         }
+        if (DatiStatus.networkAvailable == false) error(R.string.check_no_network)
         if (settings.serverConfigured && DatiStatus.serverReachable == false) warning(R.string.check_server_unreachable)
 
         val lastTest = settings.lastTestAt

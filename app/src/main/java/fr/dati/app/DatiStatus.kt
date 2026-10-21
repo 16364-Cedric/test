@@ -19,6 +19,10 @@ object DatiStatus {
     @Volatile
     var serverReachable: Boolean? = null
 
+    /** Disponibilité du réseau (mobile ou Internet) pendant la surveillance ; `null` hors surveillance. */
+    @Volatile
+    var networkAvailable: Boolean? = null
+
     /** Horodatage de la dernière alarme pour laquelle un appel a déjà été passé. */
     @Volatile
     var lastCalledAlarmAt: Long? = null

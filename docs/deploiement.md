@@ -127,6 +127,8 @@ configuration) :
 | `checkin` | entier (min, 0 = désactivé) | `30` |
 | `prealarm` | entier (s, ≥ 10) | `30` |
 | `immobility` | entier (s, 0 = désactivé) | `120` |
+| `verticality` | entier (s, 0 = désactivé) – téléphone porté debout uniquement | `30` |
+| `battery` | entier (%, 0 = désactivé) | `20` |
 | `fall` | booléen | `true` |
 | `sensitivity` | `LOW` / `NORMAL` / `HIGH` | `NORMAL` |
 | `call` | booléen | `false` |

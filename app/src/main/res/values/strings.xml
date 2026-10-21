@@ -40,6 +40,7 @@
 
     <string name="reason_fall">Chute détectée</string>
     <string name="reason_immobility">Absence de mouvement</string>
+    <string name="reason_loss_of_verticality">Perte de verticalité</string>
     <string name="reason_missed_check_in">Confirmation de présence manquée</string>
     <string name="reason_sos">Appel SOS</string>
     <string name="reason_test">Essai</string>
@@ -63,6 +64,7 @@
     <string name="sms_test_end">[ESSAI DATI] Fin de l\'essai de %1$s.</string>
     <string name="sms_reminder">ALERTE DATI toujours en cours : %1$s n\'a pas arrêté l\'alarme. %2$s</string>
     <string name="sms_low_battery">DATI : la batterie du téléphone de %1$s est à %2$d %%, la protection risque de s\'arrêter. %3$s</string>
+    <string name="sms_network_restored">DATI : %1$s était sans réseau depuis %2$s (%3$d min) ; aucune alerte ne pouvait partir pendant ce temps. Réseau retrouvé. %4$s</string>
     <string name="sms_shutdown">DATI : le téléphone de %1$s s\'éteint alors que la protection est active. %2$s</string>
 
     <!-- Réglages -->
@@ -76,6 +78,10 @@
     <string name="settings_pre_alarm_help">Minimum 10 secondes.</string>
     <string name="settings_immobility">Alarme d\'immobilité (secondes)</string>
     <string name="settings_immobility_help">Déclenche une pré-alarme si le téléphone ne bouge plus. 0 pour désactiver.</string>
+    <string name="settings_verticality">Perte de verticalité (secondes)</string>
+    <string name="settings_verticality_help">Pré-alarme si le téléphone reste couché pendant cette durée. À n\'activer que si le téléphone est porté debout (poche de poitrine, étui de ceinture) : en poche de pantalon, il se couche quand vous vous asseyez. 0 pour désactiver.</string>
+    <string name="settings_battery">Alerte batterie faible (%)</string>
+    <string name="settings_battery_help">Vos contacts et le superviseur sont prévenus sous ce niveau. 0 pour désactiver.</string>
     <string name="settings_fall">Détection de chute</string>
     <string name="settings_call">Appeler le premier contact lors d\'une alarme</string>
     <string name="settings_save">Enregistrer</string>
@@ -109,6 +115,7 @@
     <string name="check_full_screen">Alarme plein écran non autorisée : la pré-alarme peut passer inaperçue écran verrouillé.</string>
     <string name="check_battery_optimization">Optimisation de batterie active : Android peut suspendre la surveillance.</string>
     <string name="check_location_disabled">Localisation désactivée dans les réglages du téléphone.</string>
+    <string name="check_no_network">Aucun réseau (ni mobile ni Internet) : aucune alerte ne peut partir. Rejoignez une zone couverte.</string>
     <string name="check_server_unreachable">Serveur de supervision injoignable lors du dernier échange.</string>
     <string name="check_never_tested">Aucun essai réalisé : lancez un essai avec vos contacts.</string>
     <string name="check_test_old">Dernier essai il y a %1$d jours : refaites un essai.</string>
@@ -134,8 +141,14 @@
     <string name="config_summary_contacts">Contacts SMS : %1$s</string>
     <string name="config_summary_check_in">Confirmation de présence : %1$d min</string>
     <string name="config_summary_immobility">Alarme d\'immobilité : %1$d s</string>
+    <string name="config_summary_verticality">Perte de verticalité : %1$d s</string>
+    <string name="config_summary_battery">Alerte batterie sous %1$d %%</string>
     <string name="config_apply">Appliquer</string>
     <string name="config_applied">Configuration appliquée</string>
+
+    <!-- Réseau -->
+    <string name="network_lost_title">Réseau perdu</string>
+    <string name="network_lost_text">Aucune alerte ne peut partir sans réseau. Rejoignez une zone couverte ; une alarme déclenchée entre-temps sera renvoyée dès le retour du réseau.</string>
 
     <!-- Batterie -->
     <string name="low_battery_title">Batterie faible</string>

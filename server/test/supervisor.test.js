@@ -123,3 +123,18 @@ test('unknown event types are rejected', () => {
   const { supervisor, device } = setup();
   assert.throws(() => supervisor.event(device, { type: 'party' }));
 });
+
+test('a network outage reported on reconnection is kept in the history', () => {
+  const { supervisor, device, sent } = setup();
+  supervisor.event(device, { type: 'network_restored', durationMs: minutes(7) });
+  const [alert] = supervisor.status().alerts;
+  assert.equal(alert.type, AlertType.NETWORK_LOSS);
+  assert.equal(alert.resolution, 'Réseau retrouvé après 7 min');
+  assert.equal(sent.at(-1).urgent, false);
+});
+
+test('loss of verticality has a readable label', () => {
+  const { supervisor, device } = setup();
+  supervisor.event(device, { type: 'alarm', reason: 'LOSS_OF_VERTICALITY' });
+  assert.equal(supervisor.status().alerts[0].label, 'Perte de verticalité');
+});

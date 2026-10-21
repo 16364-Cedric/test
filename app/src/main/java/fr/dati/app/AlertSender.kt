@@ -60,6 +60,11 @@ class AlertSender(
         sendSms(context.getString(R.string.sms_low_battery, name(), percent, where(lastKnownLocation())))
     }
 
+    fun sendNetworkRestored(lostAtWallMs: Long, minutes: Long) {
+        val since = DateFormat.getTimeFormat(context).format(Date(lostAtWallMs))
+        sendSms(context.getString(R.string.sms_network_restored, name(), since, minutes, where(lastKnownLocation())))
+    }
+
     fun sendShutdown() {
         sendSms(context.getString(R.string.sms_shutdown, name(), where(lastKnownLocation())))
     }

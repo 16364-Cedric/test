@@ -64,4 +64,12 @@ class DeploymentConfigTest {
         assertEquals("t2", DeploymentConfig.fromLink(" https://dati.example/c#token=t2&name=A ").token)
         assertFailsWith<IllegalArgumentException> { DeploymentConfig.fromLink("bonjour") }
     }
+
+    @Test
+    fun `reads verticality and battery threshold`() {
+        val config = DeploymentConfig.fromQuery("verticality=30&battery=20")
+        assertEquals(30, config.verticalitySeconds)
+        assertEquals(20, config.batteryThresholdPercent)
+        assertFailsWith<IllegalArgumentException> { DeploymentConfig.fromQuery("battery=150") }
+    }
 }

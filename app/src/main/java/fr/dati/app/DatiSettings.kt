@@ -33,6 +33,16 @@ class DatiSettings(context: Context) {
         get() = prefs.getInt(KEY_IMMOBILITY, 120)
         set(value) = prefs.edit { putInt(KEY_IMMOBILITY, value.coerceAtLeast(0)) }
 
+    /** Durée en secondes d'inclinaison avant pré-alarme de perte de verticalité, 0 pour désactiver. */
+    var verticalitySeconds: Int
+        get() = prefs.getInt(KEY_VERTICALITY, 0)
+        set(value) = prefs.edit { putInt(KEY_VERTICALITY, value.coerceAtLeast(0)) }
+
+    /** Seuil d'alerte batterie en pourcentage, 0 pour désactiver. */
+    var batteryThresholdPercent: Int
+        get() = prefs.getInt(KEY_BATTERY, 20)
+        set(value) = prefs.edit { putInt(KEY_BATTERY, value.coerceIn(0, 90)) }
+
     var fallDetection: Boolean
         get() = prefs.getBoolean(KEY_FALL, true)
         set(value) = prefs.edit { putBoolean(KEY_FALL, value) }
@@ -82,6 +92,8 @@ class DatiSettings(context: Context) {
         config.checkInMinutes?.let { checkInMinutes = it }
         config.preAlarmSeconds?.let { preAlarmSeconds = it }
         config.immobilitySeconds?.let { immobilitySeconds = it }
+        config.verticalitySeconds?.let { verticalitySeconds = it }
+        config.batteryThresholdPercent?.let { batteryThresholdPercent = it }
         config.fallDetection?.let { fallDetection = it }
         config.fallSensitivity?.let { fallSensitivity = it }
         config.callFirstContact?.let { callFirstContact = it }
@@ -101,6 +113,8 @@ class DatiSettings(context: Context) {
         private const val KEY_CHECK_IN = "check_in_minutes"
         private const val KEY_PRE_ALARM = "pre_alarm_seconds"
         private const val KEY_IMMOBILITY = "immobility_seconds"
+        private const val KEY_VERTICALITY = "verticality_seconds"
+        private const val KEY_BATTERY = "battery_threshold"
         private const val KEY_FALL = "fall_detection"
         private const val KEY_CALL = "call_first_contact"
         private const val KEY_ACTIVE = "monitoring_active"

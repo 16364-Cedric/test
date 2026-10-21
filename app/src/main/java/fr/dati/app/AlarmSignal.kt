@@ -36,6 +36,11 @@ class AlarmSignal(private val context: Context) {
         }
     }
 
+    /** Courte vibration d'avertissement, sans sonnerie. */
+    fun buzz() {
+        vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 300, 200, 300, 200, 300), -1))
+    }
+
     fun stop() {
         ringtone?.stop()
         ringtone = null

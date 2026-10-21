@@ -7,6 +7,7 @@ fun AlarmReason.label(context: Context): String = context.getString(
     when (this) {
         AlarmReason.FALL -> R.string.reason_fall
         AlarmReason.IMMOBILITY -> R.string.reason_immobility
+        AlarmReason.LOSS_OF_VERTICALITY -> R.string.reason_loss_of_verticality
         AlarmReason.MISSED_CHECK_IN -> R.string.reason_missed_check_in
         AlarmReason.SOS -> R.string.reason_sos
         AlarmReason.TEST -> R.string.reason_test

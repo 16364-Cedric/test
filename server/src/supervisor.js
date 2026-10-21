@@ -6,6 +6,7 @@ export const AlertType = Object.freeze({
   LOST_CONTACT: 'lost_contact',
   LOW_BATTERY: 'low_battery',
   SHUTDOWN: 'shutdown',
+  NETWORK_LOSS: 'network_loss',
 });
 
 const URGENT = new Set([AlertType.ALARM, AlertType.LOST_CONTACT]);
@@ -13,6 +14,7 @@ const URGENT = new Set([AlertType.ALARM, AlertType.LOST_CONTACT]);
 const REASON_LABELS = {
   FALL: 'Chute détectée',
   IMMOBILITY: 'Absence de mouvement',
+  LOSS_OF_VERTICALITY: 'Perte de verticalité',
   MISSED_CHECK_IN: 'Confirmation de présence manquée',
   SOS: 'Appel SOS',
   TEST: 'Essai',
@@ -154,7 +156,7 @@ export class Supervisor {
     return this.reply(device);
   }
 
-  /** Événement ponctuel : start, stop, prealarm, alarm, ok, low_battery, shutdown. */
+  /** Événement ponctuel : start, stop, prealarm, alarm, ok, low_battery, shutdown, network_restored. */
   event(device, payload = {}) {
     this.applyPayload(device, payload);
     const location = payload.location ?? device.lastLocation;
@@ -193,6 +195,20 @@ export class Supervisor {
         const type = payload.type === 'shutdown' ? AlertType.SHUTDOWN : AlertType.LOW_BATTERY;
         const alert = this.createAlert(device, type, { location });
         this.notifier.send({ title: `${this.describe(alert)} : ${device.name}`, message: this.describe(alert), urgent: false });
+        break;
+      }
+      case 'network_restored': {
+        // Le téléphone ne peut signaler une coupure qu'une fois le réseau revenu : l'alerte est
+        // historisée et clôturée d'emblée (la coupure longue a déjà été vue comme perte de contact).
+        const minutes = Math.max(1, Math.round((Number(payload.durationMs) || 0) / 60_000));
+        const alert = this.createAlert(device, AlertType.NETWORK_LOSS, { location, durationMs: Number(payload.durationMs) || null });
+        alert.resolvedAt = this.now();
+        alert.resolution = `Réseau retrouvé après ${minutes} min`;
+        this.notifier.send({
+          title: `Réseau retrouvé : ${device.name}`,
+          message: `${device.name} était sans réseau depuis ${minutes} min : aucune alerte ne pouvait partir pendant ce temps.`,
+          urgent: false,
+        });
         break;
       }
       case 'prealarm':
@@ -264,6 +280,8 @@ export class Supervisor {
         return 'Batterie faible';
       case AlertType.SHUTDOWN:
         return 'Téléphone en cours d\'extinction';
+      case AlertType.NETWORK_LOSS:
+        return 'Coupure de réseau';
       default:
         return alert.type;
     }
@@ -282,13 +300,14 @@ export class Supervisor {
     }
   }
 
-  createAlert(device, type, { reason = null, location = null, test = false } = {}) {
+  createAlert(device, type, { reason = null, location = null, test = false, durationMs = null } = {}) {
     const alert = {
       id: newId(),
       deviceId: device.id,
       type,
       reason,
       test,
+      durationMs,
       location: location ? { ...location } : null,
       createdAt: this.now(),
       ackedBy: null,

@@ -10,6 +10,7 @@ si elle ne donne plus signe de vie.
 |---|---|
 | **Chute** | chute libre suivie d'un choc (accéléromètre), sensibilité réglable |
 | **Immobilité** | ni secousse, ni changement d'orientation (accéléromètre), ni rotation (gyroscope) pendant la durée réglée (2 min par défaut) |
+| **Perte de verticalité** *(option)* | le téléphone, porté debout (poche de poitrine, étui de ceinture), reste couché pendant la durée réglée |
 | **Confirmation manquée** | l'utilisateur doit appuyer sur « Je vais bien » à intervalle régulier (30 min par défaut) |
 | **SOS** | appui long sur le bouton SOS, ou **4 appuis rapides sur le bouton marche/arrêt** sans regarder l'écran : alarme immédiate |
 | **Perte de contact** *(avec serveur)* | le téléphone ne donne plus de nouvelles pendant 15 min (batterie vide, casse, pas de réseau) |
@@ -26,9 +27,16 @@ si elle ne donne plus signe de vie.
 3. Quand un référent clique sur **« Je prends en charge »**, son nom s'affiche sur le téléphone.
 4. Quand l'utilisateur arrête l'alarme, les contacts et la console en sont informés.
 
-Également : **auto-contrôle** sur l'écran principal (autorisations, batterie, capteurs, serveur),
-**essai guidé** de la chaîne d'alerte, alerte **batterie faible** et **extinction**, **journal**
-des événements, configuration à distance par **QR code** ou **MDM**.
+Également : **auto-contrôle** sur l'écran principal (autorisations, batterie, capteurs, réseau,
+serveur), **essai guidé** de la chaîne d'alerte, alerte **batterie faible** (sous 20 % par défaut)
+et **extinction**, **journal** des événements, configuration à distance par **QR code** ou **MDM**.
+
+**Perte de réseau** : sans réseau, aucune alerte ne peut partir du téléphone. Après 1 minute sans
+réseau mobile ni Internet, le téléphone vibre et prévient le salarié pour qu'il rejoigne une zone
+couverte. Au retour du réseau, une alarme déclenchée pendant la coupure est renvoyée, les
+événements en attente sont transmis au serveur, et les contacts sont informés si la coupure a
+duré plus de 15 minutes. Côté serveur, un téléphone muet depuis 15 minutes déclenche l'alerte
+« perte de contact ».
 
 La surveillance tourne dans un service au premier plan (notification permanente) et continue écran éteint.
 Le GPS est suivi en continu pendant la surveillance (toutes les 30 s ou 10 m) pour que la position

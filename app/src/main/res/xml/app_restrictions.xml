@@ -8,6 +8,8 @@
     <restriction android:key="checkin" android:restrictionType="integer" android:title="@string/settings_check_in" android:defaultValue="30" />
     <restriction android:key="prealarm" android:restrictionType="integer" android:title="@string/settings_pre_alarm" android:defaultValue="30" />
     <restriction android:key="immobility" android:restrictionType="integer" android:title="@string/settings_immobility" android:defaultValue="120" />
+    <restriction android:key="verticality" android:restrictionType="integer" android:title="@string/settings_verticality" android:defaultValue="0" />
+    <restriction android:key="battery" android:restrictionType="integer" android:title="@string/settings_battery" android:defaultValue="20" />
     <restriction android:key="fall" android:restrictionType="bool" android:title="@string/settings_fall" android:defaultValue="true" />
     <restriction android:key="sensitivity" android:restrictionType="choice" android:title="@string/settings_sensitivity" android:entries="@array/sensitivity_labels" android:entryValues="@array/sensitivity_values" android:defaultValue="NORMAL" />
     <restriction android:key="call" android:restrictionType="bool" android:title="@string/settings_call" android:defaultValue="false" />

@@ -36,6 +36,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.checkInInput.setText(settings.checkInMinutes.toString())
         binding.preAlarmInput.setText(settings.preAlarmSeconds.toString())
         binding.immobilityInput.setText(settings.immobilitySeconds.toString())
+        binding.verticalityInput.setText(settings.verticalitySeconds.toString())
+        binding.batteryInput.setText(settings.batteryThresholdPercent.toString())
         binding.fallSwitch.isChecked = settings.fallDetection
         binding.sensitivityGroup.check(
             when (settings.fallSensitivity) {
@@ -71,6 +73,8 @@ class SettingsActivity : AppCompatActivity() {
         settings.checkInMinutes = binding.checkInInput.intOr(settings.checkInMinutes)
         settings.preAlarmSeconds = binding.preAlarmInput.intOr(settings.preAlarmSeconds)
         settings.immobilitySeconds = binding.immobilityInput.intOr(settings.immobilitySeconds)
+        settings.verticalitySeconds = binding.verticalityInput.intOr(settings.verticalitySeconds)
+        settings.batteryThresholdPercent = binding.batteryInput.intOr(settings.batteryThresholdPercent)
         settings.fallDetection = binding.fallSwitch.isChecked
         settings.fallSensitivity = when (binding.sensitivityGroup.checkedRadioButtonId) {
             R.id.sensitivityLow -> FallSensitivity.LOW
