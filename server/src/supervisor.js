@@ -39,6 +39,20 @@ function point(p) {
   return { lat: finite(p?.lat, -90, 90, 'Latitude'), lon: finite(p?.lon, -180, 180, 'Longitude') };
 }
 
+const MAC = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+const IBEACON = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:(\d{1,5}):(\d{1,5})$/;
+
+/** Identifiant de balise : adresse matérielle ou iBeacon uuid:major:minor (même format que l'application). */
+function beaconId(raw) {
+  const id = String(raw).trim().toLowerCase();
+  if (MAC.test(id)) return id;
+  const match = IBEACON.exec(id);
+  if (match && Number(match[1]) <= 65535 && Number(match[2]) <= 65535) {
+    return `${id.split(':')[0]}:${Number(match[1])}:${Number(match[2])}`;
+  }
+  throw new Error(`Balise non reconnue : ${raw} (attendu aa:bb:cc:dd:ee:ff ou uuid:major:minor)`);
+}
+
 function mapsLink(location) {
   return location ? `https://maps.google.com/?q=${location.lat},${location.lon}` : null;
 }
@@ -129,6 +143,12 @@ export class Supervisor {
       zone.points = input.points.map(point);
     } else {
       throw new Error('Type de zone inconnu');
+    }
+    const beacons = Array.isArray(input.beacons) ? input.beacons.filter((b) => String(b).trim()) : [];
+    if (beacons.length > 50) throw new Error('50 balises au maximum par zone');
+    if (beacons.length) {
+      zone.beacons = [...new Set(beacons.map(beaconId))];
+      zone.minRssi = finite(input.minRssi ?? -75, -100, -30, 'Signal minimal (dBm)');
     }
     this.data.zones.push(zone);
     this.data.zonesVersion += 1;

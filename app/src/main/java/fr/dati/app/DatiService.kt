@@ -2,6 +2,7 @@ package fr.dati.app
 
 import android.annotation.SuppressLint
 import android.app.Service
+import android.bluetooth.BluetoothAdapter
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -52,6 +53,7 @@ class DatiService : Service(), SensorEventListener {
     private lateinit var server: ServerClient
     private lateinit var sensorManager: SensorManager
     private lateinit var networkMonitor: NetworkMonitor
+    private lateinit var beaconScanner: BeaconScanner
 
     private val handler = Handler(Looper.getMainLooper())
     private var fallDetector = FallDetector()
@@ -127,6 +129,17 @@ class DatiService : Service(), SensorEventListener {
         }
     }
 
+    private val bluetoothReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)) {
+                BluetoothAdapter.STATE_ON -> updateBeaconScan(force = true)
+                BluetoothAdapter.STATE_OFF -> if (zoneTracker.beaconIds.isNotEmpty()) {
+                    log.add("Bluetooth désactivé : les zones à balises ne sont plus surveillées")
+                }
+            }
+        }
+    }
+
     private val shutdownReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             log.add("Extinction du téléphone pendant la surveillance")
@@ -144,6 +157,9 @@ class DatiService : Service(), SensorEventListener {
         alertSender = AlertSender(this, settings, log)
         server = ServerClient(settings)
         sensorManager = getSystemService(SensorManager::class.java)
+        beaconScanner = BeaconScanner(this) { id, rssi ->
+            if (machine.state != DatiState.Idle) zoneTracker.onBeacon(now(), id, rssi).forEach(::onZoneEvent)
+        }
         networkMonitor = NetworkMonitor(this) { available ->
             DatiStatus.networkAvailable = available
             networkLoss.onStatus(now(), available)?.let(::onNetworkEvent)
@@ -204,6 +220,7 @@ class DatiService : Service(), SensorEventListener {
         zoneTracker.zones = ZoneCodec.parse(settings.zonesJson)
         startLocationTracking()
         registerReceivers()
+        updateBeaconScan()
         networkLoss = NetworkLossTracker(NETWORK_GRACE_MS)
         networkMonitor.start()
         machine.updateConfig(settings.toConfig(), now())
@@ -225,6 +242,7 @@ class DatiService : Service(), SensorEventListener {
         sensorManager.unregisterListener(this)
         getSystemService(LocationManager::class.java).removeUpdates(locationTracker)
         trackingFast = null
+        beaconScanner.stop()
         zoneTracker.reset()
         DatiStatus.zonePresence = null
         Notifications.cancelInfo(this, Notifications.ZONE_INFO_ID)
@@ -235,6 +253,7 @@ class DatiService : Service(), SensorEventListener {
             unregisterReceiver(batteryReceiver)
             unregisterReceiver(screenReceiver)
             unregisterReceiver(shutdownReceiver)
+            unregisterReceiver(bluetoothReceiver)
             receiversRegistered = false
         }
         wakeLock?.let { if (it.isHeld) it.release() }
@@ -257,6 +276,7 @@ class DatiService : Service(), SensorEventListener {
             flags,
         )
         ContextCompat.registerReceiver(this, shutdownReceiver, IntentFilter(Intent.ACTION_SHUTDOWN), flags)
+        ContextCompat.registerReceiver(this, bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED), flags)
         receiversRegistered = true
     }
 
@@ -378,7 +398,18 @@ class DatiService : Service(), SensorEventListener {
         settings.zonesVersion = version
         zoneTracker.zones = ZoneCodec.parse(json)
         log.add("Zones à risque mises à jour : ${zoneTracker.zones.size}")
-        if (machine.state != DatiState.Idle) startLocationTracking()
+        if (machine.state != DatiState.Idle) {
+            startLocationTracking()
+            updateBeaconScan()
+        }
+    }
+
+    /** Écoute les balises des zones intérieures (seulement s'il y en a). */
+    private fun updateBeaconScan(force: Boolean = false) {
+        val ids = zoneTracker.beaconIds
+        if (!beaconScanner.start(ids, force) && ids.isNotEmpty()) {
+            log.add("Balises Bluetooth non surveillées : Bluetooth désactivé ou non autorisé")
+        }
     }
 
     /** Présence en zone à risque : information à l'entrée, avertissement, puis pré-alarme. */

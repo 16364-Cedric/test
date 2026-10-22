@@ -101,6 +101,10 @@
           <select name="type"><option value="polygon">Polygone (cliquer les sommets)</option><option value="circle">Cercle (cliquer le centre)</option></select>
         </label>
         <label id="radius-label" hidden>Rayon (m) <input name="radius" type="number" min="1" max="5000" value="30"></label>
+        <label style="grid-column: 1 / -1">Balises Bluetooth – zones intérieures (optionnel, une par ligne : <code>uuid:major:minor</code> ou <code>aa:bb:cc:dd:ee:ff</code>)
+          <textarea name="beacons" rows="2" style="font: inherit; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);"></textarea>
+        </label>
+        <label>Signal minimal des balises (dBm) <input name="minRssi" type="number" min="-100" max="-30" value="-75"></label>
         <p id="zone-help"></p>
         <button type="button" id="zone-clear">Effacer le tracé</button>
         <button type="submit" class="primary">Enregistrer la zone</button>
@@ -258,7 +262,8 @@
     }
 
     function zoneLayer(zone) {
-      const label = el('div', {}, el('strong', {}, zone.name), el('br'), `Présence max. ${zone.maxMinutes} min`);
+      const label = el('div', {}, el('strong', {}, zone.name), el('br'), `Présence max. ${zone.maxMinutes} min`,
+        zone.beacons?.length ? el('div', {}, `${zone.beacons.length} balise(s) Bluetooth`) : null);
       const layer = zone.type === 'circle'
         ? L.circle([zone.center.lat, zone.center.lon], { ...ZONE_STYLE, radius: zone.radius })
         : L.polygon(zone.points.map((p) => [p.lat, p.lon]), ZONE_STYLE);
@@ -401,6 +406,11 @@
       event.preventDefault();
       const form = new FormData(zoneForm);
       const body = { name: form.get('name'), maxMinutes: Number(form.get('maxMinutes')), type: zoneType() };
+      const beacons = form.get('beacons').split(/[\n,;]+/).map((b) => b.trim()).filter(Boolean);
+      if (beacons.length) {
+        body.beacons = beacons;
+        body.minRssi = Number(form.get('minRssi'));
+      }
       if (body.type === 'circle') {
         if (!draft.length) return window.alert('Cliquez sur la carte pour placer le centre.');
         body.center = { lat: draft[0][0], lon: draft[0][1] };
@@ -422,7 +432,8 @@
 
     function renderZoneList(zones) {
       document.getElementById('zones').replaceChildren(...(zones.length ? zones.map((z) => el('li', {},
-        el('span', {}, el('strong', {}, z.name), ` — présence max. ${z.maxMinutes} min`),
+        el('span', {}, el('strong', {}, z.name), ` — présence max. ${z.maxMinutes} min`,
+          z.beacons?.length ? ` — détection par ${z.beacons.length} balise(s) Bluetooth` : ' — détection par GPS'),
         el('span', { class: 'actions' },
           el('button', { type: 'button', onclick: () => map.fitBounds(zoneLayer(z).getBounds().pad(0.5)) }, 'Voir'),
           el('button', { type: 'button', onclick: () => deleteZone(z) }, 'Supprimer')))) : [el('li', { class: 'empty' }, 'Aucune zone définie.')]));

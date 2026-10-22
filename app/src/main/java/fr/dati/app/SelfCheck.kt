@@ -35,6 +35,13 @@ object SelfCheck {
         if (ZoneCodec.parse(settings.zonesJson).isNotEmpty() && !granted(Manifest.permission.ACCESS_FINE_LOCATION)) {
             warning(R.string.check_zones_need_fine_location)
         }
+        if (ZoneCodec.parse(settings.zonesJson).any { it.usesBeacons }) {
+            if (!BeaconScanner.hasPermission(context)) {
+                error(R.string.check_bluetooth_permission)
+            } else if (!BeaconScanner(context) { _, _ -> }.isBluetoothEnabled) {
+                error(R.string.check_bluetooth_disabled)
+            }
+        }
         if (settings.contacts.isNotEmpty() && !granted(Manifest.permission.SEND_SMS)) error(R.string.check_sms_permission)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !granted(Manifest.permission.POST_NOTIFICATIONS)) {
             error(R.string.check_notification_permission)

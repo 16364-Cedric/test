@@ -1,16 +1,20 @@
 package fr.dati.core
 
 /**
- * Mesure le temps passé dans chaque zone à risque à partir des positions GPS.
+ * Mesure le temps passé dans chaque zone à risque.
  *
- * Les positions trop imprécises (> [maxAccuracyM]) sont ignorées : la présence reste celle de la
- * dernière position fiable, pour ne pas sortir ni entrer à tort à cause d'un écart du GPS.
- * Le temps continue de courir entre deux positions grâce à [tick].
+ * - Zones sans balise : présence d'après le GPS. Les positions trop imprécises (> [maxAccuracyM])
+ *   sont ignorées : la présence reste celle de la dernière position fiable.
+ * - Zones avec balises Bluetooth : présence tant qu'une de leurs balises a été captée avec un
+ *   signal suffisant depuis moins de [beaconTimeoutMs].
+ *
+ * Le temps continue de courir entre deux mesures grâce à [tick].
  */
 class ZoneDwellTracker(
     zones: List<RiskZone> = emptyList(),
     private val warnBeforeMs: Long = 60_000,
     private val maxAccuracyM: Float = 50f,
+    private val beaconTimeoutMs: Long = 30_000,
 ) {
     sealed interface Event {
         val zone: RiskZone
@@ -28,6 +32,9 @@ class ZoneDwellTracker(
 
     private val presences = mutableMapOf<String, Presence>()
 
+    /** Dernière réception suffisamment forte de chaque balise. */
+    private val beaconSeenAt = mutableMapOf<String, Long>()
+
     var zones: List<RiskZone> = zones
         set(value) {
             field = value
@@ -39,25 +46,31 @@ class ZoneDwellTracker(
     fun currentZones(): List<Pair<RiskZone, Long>> =
         zones.mapNotNull { zone -> presences[zone.id]?.let { zone to it.sinceMs } }
 
+    /** Balises dont l'application doit écouter les signaux. */
+    val beaconIds: Set<String> get() = zones.flatMapTo(mutableSetOf()) { it.beacons }
+
     fun onLocation(timestampMs: Long, point: GeoPoint, accuracyM: Float): List<Event> {
         if (accuracyM > maxAccuracyM) return tick(timestampMs)
         val events = mutableListOf<Event>()
         for (zone in zones) {
-            val inside = zone.contains(point)
-            val presence = presences[zone.id]
-            if (inside && presence == null) {
-                presences[zone.id] = Presence(timestampMs)
-                events += Event.Entered(zone)
-            } else if (!inside && presence != null) {
-                presences.remove(zone.id)
-                events += Event.Left(zone, timestampMs - presence.sinceMs)
-            }
+            if (!zone.usesBeacons) updatePresence(zone, zone.contains(point), timestampMs, events)
         }
         return events + tick(timestampMs)
     }
 
+    fun onBeacon(timestampMs: Long, beaconId: String, rssi: Int): List<Event> {
+        val id = Beacons.normalize(beaconId) ?: return tick(timestampMs)
+        if (zones.any { id in it.beacons && rssi >= it.minRssi }) beaconSeenAt[id] = timestampMs
+        return tick(timestampMs)
+    }
+
     fun tick(timestampMs: Long): List<Event> {
         val events = mutableListOf<Event>()
+        for (zone in zones) {
+            if (!zone.usesBeacons) continue
+            val inside = zone.beacons.any { id -> beaconSeenAt[id]?.let { timestampMs - it <= beaconTimeoutMs } == true }
+            updatePresence(zone, inside, timestampMs, events)
+        }
         for (zone in zones) {
             val presence = presences[zone.id] ?: continue
             val elapsed = timestampMs - presence.sinceMs
@@ -86,5 +99,17 @@ class ZoneDwellTracker(
 
     fun reset() {
         presences.clear()
+        beaconSeenAt.clear()
+    }
+
+    private fun updatePresence(zone: RiskZone, inside: Boolean, timestampMs: Long, events: MutableList<Event>) {
+        val presence = presences[zone.id]
+        if (inside && presence == null) {
+            presences[zone.id] = Presence(timestampMs)
+            events += Event.Entered(zone)
+        } else if (!inside && presence != null) {
+            presences.remove(zone.id)
+            events += Event.Left(zone, timestampMs - presence.sinceMs)
+        }
     }
 }

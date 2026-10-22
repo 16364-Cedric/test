@@ -197,6 +197,10 @@ class MainActivity : AppCompatActivity() {
             if (settings.contacts.isNotEmpty()) add(Manifest.permission.SEND_SMS)
             if (settings.callFirstContact) add(Manifest.permission.CALL_PHONE)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+            // Balises Bluetooth des zones à risque intérieures, transmises par le serveur.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && settings.serverConfigured) {
+                add(Manifest.permission.BLUETOOTH_SCAN)
+            }
         }
         permissionLauncher.launch(permissions.toTypedArray())
     }

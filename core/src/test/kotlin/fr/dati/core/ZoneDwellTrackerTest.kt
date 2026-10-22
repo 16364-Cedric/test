@@ -81,3 +81,46 @@ class ZoneDwellTrackerTest {
         assertTrue(tracker.tick(10 * 60_000).isEmpty())
     }
 }
+
+class BeaconZoneTest {
+    private val beacon = "e2c56db5-dffb-48d2-b060-d0f5a71096e0:1:7"
+    private val zone = RiskZone(
+        id = "z3",
+        name = "Local batteries",
+        shape = ZoneShape.Circle(GeoPoint(45.0, 5.0), 10.0),
+        maxDwellMs = 5 * 60_000,
+        beacons = setOf(beacon),
+        minRssi = -75,
+    )
+
+    @Test
+    fun `identifiers are normalised`() {
+        assertEquals(beacon, Beacons.normalize(" E2C56DB5-DFFB-48D2-B060-D0F5A71096E0:01:007 "))
+        assertEquals("aa:bb:cc:dd:ee:ff", Beacons.normalize("AA:BB:CC:DD:EE:FF"))
+        assertEquals(null, Beacons.normalize("e2c56db5-dffb-48d2-b060-d0f5a71096e0:70000:1"))
+        assertEquals(null, Beacons.normalize("balise 1"))
+    }
+
+    @Test
+    fun `presence follows the beacon, not the GPS`() {
+        val tracker = ZoneDwellTracker(listOf(zone))
+        assertTrue(tracker.onLocation(0, GeoPoint(45.0, 5.0), 5f).isEmpty(), "le GPS est ignoré pour cette zone")
+        assertTrue(tracker.onBeacon(1_000, beacon.uppercase(), -90).isEmpty(), "signal trop faible")
+        assertIs<ZoneDwellTracker.Event.Entered>(tracker.onBeacon(2_000, beacon, -60).single())
+        tracker.onBeacon(20_000, beacon, -65)
+        assertTrue(tracker.tick(45_000).isEmpty(), "absence de signal de moins de 30 s tolérée")
+        val left = tracker.tick(51_000).single()
+        assertIs<ZoneDwellTracker.Event.Left>(left)
+    }
+
+    @Test
+    fun `staying near the beacon exceeds the limit`() {
+        val tracker = ZoneDwellTracker(listOf(zone))
+        var exceeded = false
+        for (t in 0..6 * 60_000L step 10_000) {
+            if (tracker.onBeacon(t, beacon, -70).any { it is ZoneDwellTracker.Event.Exceeded }) exceeded = true
+        }
+        assertTrue(exceeded)
+        assertEquals(setOf(beacon), tracker.beaconIds)
+    }
+}

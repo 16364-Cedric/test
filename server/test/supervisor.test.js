@@ -156,6 +156,19 @@ test('zones are validated, versioned and pushed to phones that are out of date',
   assert.equal(supervisor.data.zonesVersion, 2);
 });
 
+test('beacons are normalised and validated', () => {
+  const { supervisor } = setup();
+  const zone = supervisor.createZone({
+    name: 'Local batteries', type: 'circle', maxMinutes: 5, center: { lat: 45, lon: 5 }, radius: 10,
+    beacons: ['E2C56DB5-DFFB-48D2-B060-D0F5A71096E0:01:7', 'AA:BB:CC:DD:EE:FF', ''], minRssi: -80,
+  });
+  assert.deepEqual(zone.beacons, ['e2c56db5-dffb-48d2-b060-d0f5a71096e0:1:7', 'aa:bb:cc:dd:ee:ff']);
+  assert.equal(zone.minRssi, -80);
+  assert.throws(() => supervisor.createZone({
+    name: 'X', type: 'circle', maxMinutes: 5, center: { lat: 45, lon: 5 }, radius: 10, beacons: ['balise 1'],
+  }), /Balise non reconnue/);
+});
+
 test('zone overstay alarm shows the zone name', () => {
   const { supervisor, device } = setup();
   supervisor.event(device, { type: 'alarm', reason: 'ZONE_TIME_EXCEEDED', detail: 'Cuve ATEX' });

@@ -164,11 +164,34 @@ décompte se fait **sur le téléphone** :
   bâtiments ou à l'intérieur ; les positions moins précises que 50 m sont ignorées.
 - Dessiner les zones **plus larges que la zone réelle** (marge de 10 à 20 m) pour ne pas sous-estimer le
   temps de présence.
-- Dans un bâtiment ou un local en sous-sol, le GPS peut ne pas fonctionner du tout : la
-  détection n'est alors pas fiable. Pour ces cas, une détection par **balises Bluetooth**
-  placées aux accès de la zone serait nécessaire (évolution possible de l'application).
+- Dans un bâtiment ou un local en sous-sol, le GPS peut ne pas fonctionner du tout : utiliser
+  alors des **balises Bluetooth** (ci-dessous).
 - La localisation précise doit être autorisée sur le téléphone ; l'écran principal le signale
   sinon.
+
+### Zones intérieures : balises Bluetooth
+
+Pour une zone en intérieur, associer à la zone une ou plusieurs **balises Bluetooth Low Energy**
+(petits boîtiers à pile, environ 10 à 30 € pièce). La présence est alors déterminée par les
+balises seules ; la forme tracée sur la carte ne sert plus qu'à l'affichage.
+
+- **Formats acceptés** : iBeacon (`uuid:major:minor`, le plus courant) ou adresse matérielle
+  (`aa:bb:cc:dd:ee:ff`, à éviter si la balise change d'adresse). L'identifiant se lit avec
+  l'application du fabricant de la balise ou une application gratuite de scan Bluetooth.
+- **Placement** : au centre de la zone ou une balise par pièce, réglée à faible puissance pour
+  que son signal ne déborde pas hors de la zone (les murs et les équipements métalliques
+  atténuent fortement le signal).
+- **Signal minimal (dBm)** : le salarié est considéré dans la zone tant qu'il capte une balise
+  au-dessus de ce seuil (-75 dBm par défaut, soit quelques mètres). Augmenter vers -65 pour
+  resserrer la zone, baisser vers -85 pour l'élargir. **Étalonner sur place** : se tenir à la
+  limite de la zone et lire la valeur dans l'application de scan.
+- Le salarié est considéré sorti après 30 secondes sans signal.
+- **Certification ATEX** : une balise installée *dans* la zone ATEX doit elle-même être un
+  matériel certifié pour cette zone. À défaut, la placer juste à l'extérieur, à l'entrée, et
+  régler le seuil en conséquence. Il en va de même pour le téléphone du salarié, qui doit être
+  certifié pour la zone dans laquelle il entre.
+- Le Bluetooth doit rester activé sur le téléphone et autorisé pour l'application ; l'écran
+  principal le signale sinon.
 
 ## 5. Fiabilité selon les téléphones
 

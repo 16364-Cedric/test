@@ -1,5 +1,6 @@
 package fr.dati.app
 
+import fr.dati.core.Beacons
 import fr.dati.core.GeoPoint
 import fr.dati.core.RiskZone
 import fr.dati.core.ZoneShape
@@ -23,11 +24,16 @@ object ZoneCodec {
             }
             else -> throw IllegalArgumentException("Type de zone inconnu")
         }
+        val beacons = o.optJSONArray("beacons")
         return RiskZone(
             id = o.getString("id"),
             name = o.getString("name"),
             shape = shape,
             maxDwellMs = (o.getDouble("maxMinutes") * 60_000).toLong(),
+            beacons = if (beacons == null) emptySet() else {
+                (0 until beacons.length()).mapNotNullTo(mutableSetOf()) { Beacons.normalize(beacons.getString(it)) }
+            },
+            minRssi = o.optInt("minRssi", -75),
         )
     }
 

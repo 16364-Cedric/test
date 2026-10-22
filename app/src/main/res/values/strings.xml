@@ -154,6 +154,8 @@
     <string name="zone_warning_title">Quittez la zone %1$s</string>
     <string name="zone_warning_text">Durée maximale atteinte dans %1$d s : une pré-alarme va se déclencher.</string>
     <string name="zone_prealarm_hint">Quittez la zone. « Je vais bien » relance le décompte si vous devez y rester.</string>
+    <string name="check_bluetooth_permission">Bluetooth non autorisé : les zones à risque intérieures (balises) ne sont pas surveillées.</string>
+    <string name="check_bluetooth_disabled">Bluetooth désactivé : les zones à risque intérieures (balises) ne sont pas surveillées.</string>
     <string name="check_zones_need_fine_location">Localisation précise non autorisée : le temps passé en zone à risque ne peut pas être mesuré.</string>
 
     <!-- Réseau -->

@@ -14,13 +14,23 @@ sealed interface ZoneShape {
     data class Polygon(val points: List<GeoPoint>) : ZoneShape
 }
 
-/** Zone à risque (ATEX…) où la durée de présence est limitée. */
+/**
+ * Zone à risque (ATEX…) où la durée de présence est limitée.
+ *
+ * Si des balises Bluetooth sont associées à la zone ([beacons]), la présence est déterminée par
+ * elles seules (zones intérieures, où le GPS ne fonctionne pas) ; la forme ne sert alors qu'à
+ * l'affichage sur la carte.
+ */
 data class RiskZone(
     val id: String,
     val name: String,
     val shape: ZoneShape,
     val maxDwellMs: Long,
+    val beacons: Set<String> = emptySet(),
+    val minRssi: Int = -75,
 ) {
+    val usesBeacons: Boolean get() = beacons.isNotEmpty()
+
     fun contains(point: GeoPoint): Boolean = when (shape) {
         is ZoneShape.Circle -> Geo.distanceM(shape.center, point) <= shape.radiusM
         is ZoneShape.Polygon -> Geo.polygonContains(shape.points, point)
