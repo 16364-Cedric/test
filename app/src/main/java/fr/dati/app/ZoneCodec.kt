@@ -38,4 +38,22 @@ object ZoneCodec {
     }
 
     private fun point(o: JSONObject) = GeoPoint(o.getDouble("lat"), o.getDouble("lon"))
+
+    /** Format identique à celui du serveur (utilisé pour les zones créées sur le téléphone). */
+    fun encode(zones: List<RiskZone>): String = JSONArray().apply {
+        for (zone in zones) {
+            val o = JSONObject()
+                .put("id", zone.id)
+                .put("name", zone.name)
+                .put("maxMinutes", zone.maxDwellMs / 60_000.0)
+            when (val shape = zone.shape) {
+                is ZoneShape.Circle -> o.put("type", "circle").put("center", json(shape.center)).put("radius", shape.radiusM)
+                is ZoneShape.Polygon -> o.put("type", "polygon").put("points", JSONArray(shape.points.map(::json)))
+            }
+            if (zone.usesBeacons) o.put("beacons", JSONArray(zone.beacons.toList())).put("minRssi", zone.minRssi)
+            put(o)
+        }
+    }.toString()
+
+    private fun json(p: GeoPoint) = JSONObject().put("lat", p.lat).put("lon", p.lon)
 }

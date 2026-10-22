@@ -217,7 +217,7 @@ class DatiService : Service(), SensorEventListener {
             sensorManager.getDefaultSensor(type)?.let { sensorManager.registerListener(this, it, SAMPLING_PERIOD_US) }
         }
         zoneTracker.reset()
-        zoneTracker.zones = ZoneCodec.parse(settings.zonesJson)
+        zoneTracker.zones = settings.allZones()
         startLocationTracking()
         registerReceivers()
         updateBeaconScan()
@@ -304,6 +304,9 @@ class DatiService : Service(), SensorEventListener {
     private fun reloadSettings() {
         configureDetectors()
         machine.updateConfig(settings.toConfig(), now())
+        zoneTracker.zones = settings.allZones()
+        startLocationTracking()
+        updateBeaconScan()
         log.add("Réglages rechargés")
     }
 
@@ -396,7 +399,7 @@ class DatiService : Service(), SensorEventListener {
     private fun onZonesReceived(version: Int, json: String) {
         settings.zonesJson = json
         settings.zonesVersion = version
-        zoneTracker.zones = ZoneCodec.parse(json)
+        zoneTracker.zones = settings.allZones()
         log.add("Zones à risque mises à jour : ${zoneTracker.zones.size}")
         if (machine.state != DatiState.Idle) {
             startLocationTracking()

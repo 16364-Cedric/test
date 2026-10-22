@@ -53,6 +53,12 @@
         </activity>
 
         <activity
+            android:name=".MapActivity"
+            android:exported="false"
+            android:label="@string/map_title"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".JournalActivity"
             android:exported="false"
             android:label="@string/journal_title"

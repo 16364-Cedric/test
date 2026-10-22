@@ -32,10 +32,11 @@ object SelfCheck {
         if (!granted(Manifest.permission.ACCESS_FINE_LOCATION) && !granted(Manifest.permission.ACCESS_COARSE_LOCATION)) {
             error(R.string.check_location_permission)
         }
-        if (ZoneCodec.parse(settings.zonesJson).isNotEmpty() && !granted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+        val zones = settings.allZones()
+        if (zones.isNotEmpty() && !granted(Manifest.permission.ACCESS_FINE_LOCATION)) {
             warning(R.string.check_zones_need_fine_location)
         }
-        if (ZoneCodec.parse(settings.zonesJson).any { it.usesBeacons }) {
+        if (zones.any { it.usesBeacons }) {
             if (!BeaconScanner.hasPermission(context)) {
                 error(R.string.check_bluetooth_permission)
             } else if (!BeaconScanner(context) { _, _ -> }.isBluetoothEnabled) {

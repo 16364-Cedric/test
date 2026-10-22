@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import fr.dati.core.DatiConfig
 import fr.dati.core.DeploymentConfig
 import fr.dati.core.FallSensitivity
+import fr.dati.core.RiskZone
 
 /** Préférences de l'utilisateur, stockées localement sur le téléphone. */
 class DatiSettings(context: Context) {
@@ -80,6 +81,14 @@ class DatiSettings(context: Context) {
         get() = prefs.getInt(KEY_ZONES_VERSION, -1)
         set(value) = prefs.edit { putInt(KEY_ZONES_VERSION, value) }
 
+    /** Zones à risque créées sur le téléphone (même format JSON que celles du serveur). */
+    var localZonesJson: String
+        get() = prefs.getString(KEY_LOCAL_ZONES, "[]").orEmpty()
+        set(value) = prefs.edit { putString(KEY_LOCAL_ZONES, value) }
+
+    /** Zones du serveur et zones locales. */
+    fun allZones(): List<RiskZone> = ZoneCodec.parse(zonesJson) + ZoneCodec.parse(localZonesJson)
+
     /** Heure (horloge murale) du dernier essai complet de la chaîne d'alerte, 0 si jamais. */
     var lastTestAt: Long
         get() = prefs.getLong(KEY_LAST_TEST, 0L)
@@ -134,5 +143,6 @@ class DatiSettings(context: Context) {
         private const val KEY_LAST_TEST = "last_test_at"
         private const val KEY_ZONES = "zones_json"
         private const val KEY_ZONES_VERSION = "zones_version"
+        private const val KEY_LOCAL_ZONES = "local_zones_json"
     }
 }

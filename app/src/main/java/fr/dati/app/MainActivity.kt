@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -58,6 +59,9 @@ class MainActivity : AppCompatActivity() {
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.testButton.setOnClickListener { confirmTest() }
         binding.journalButton.setOnClickListener { startActivity(Intent(this, JournalActivity::class.java)) }
+        binding.mapButton.setOnClickListener { startActivity(Intent(this, MapActivity::class.java)) }
+        val info = packageManager.getPackageInfo(packageName, 0)
+        binding.versionText.text = getString(R.string.version, info.versionName, PackageInfoCompat.getLongVersionCode(info))
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -12,7 +12,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "0.2.0"
+        versionName = "0.3.0"
     }
 
     signingConfigs {
@@ -65,4 +65,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("com.google.android.material:material:1.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    // Carte OpenStreetMap native, sans clé d'API.
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
 }

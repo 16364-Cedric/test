@@ -147,6 +147,31 @@
     <string name="config_apply">Appliquer</string>
     <string name="config_applied">Configuration appliquée</string>
 
+    <string name="version">Version %1$s (compilation %2$d)</string>
+
+    <!-- Carte -->
+    <string name="map_title">Carte et zones à risque</string>
+    <string name="map_center">Me centrer</string>
+    <string name="map_no_position">Position GPS pas encore disponible.</string>
+    <string name="map_searching">📍 Recherche de la position GPS…</string>
+    <string name="map_accuracy">📍 Position précise à ±%1$d m</string>
+    <string name="map_inside">⚠️ Vous êtes dans la zone « %1$s »</string>
+    <string name="map_inside_idle">⚠️ Vous êtes dans la zone « %1$s » – protection arrêtée : la durée n\'est pas décomptée</string>
+    <string name="map_outside">✅ Hors zone à risque</string>
+    <string name="map_zone_count">%1$d zone(s) : %2$d du serveur, %3$d créée(s) sur ce téléphone</string>
+    <string name="map_hint">Appui long sur la carte pour créer une zone à risque. Touchez une zone pour la consulter ou la supprimer.</string>
+    <string name="map_new_zone">Nouvelle zone à risque</string>
+    <string name="map_zone_name">Nom de la zone</string>
+    <string name="map_zone_radius">Rayon (m, 5 à 2000)</string>
+    <string name="map_zone_minutes">Présence maximale (min)</string>
+    <string name="map_zone_invalid">Zone non créée : indiquez un nom, un rayon de 5 à 2000 m et une durée de 1 à 480 min.</string>
+    <string name="map_zone_max">Présence maximale : %1$d min</string>
+    <string name="map_zone_gps">Détection par GPS</string>
+    <string name="map_zone_beacons">Détection par balises Bluetooth</string>
+    <string name="map_zone_local">Créée sur ce téléphone</string>
+    <string name="map_zone_server">Définie par le serveur de supervision</string>
+    <string name="map_zone_delete">Supprimer</string>
+
     <!-- Zones à risque -->
     <string name="zone_status">⚠️ Zone « %1$s » depuis %2$s (max %3$s)</string>
     <string name="zone_entered_title">Zone à risque : %1$s</string>
