@@ -23,6 +23,16 @@ object DatiStatus {
     @Volatile
     var networkAvailable: Boolean? = null
 
+    /** Zone à risque où se trouve le salarié : nom, entrée (horloge monotone), durée maximale. */
+    data class ZonePresence(val name: String, val sinceMs: Long, val maxDwellMs: Long)
+
+    @Volatile
+    var zonePresence: ZonePresence? = null
+
+    /** Précision affichée avec la cause de l'alarme en cours (nom de la zone…). */
+    @Volatile
+    var alarmDetail: String? = null
+
     /** Horodatage de la dernière alarme pour laquelle un appel a déjà été passé. */
     @Volatile
     var lastCalledAlarmAt: Long? = null

@@ -21,9 +21,15 @@ const supervisor = new Supervisor({
   heartbeatTimeoutMs: minutes(env.HEARTBEAT_TIMEOUT_MIN, 15),
   escalateAfterMs: minutes(env.ESCALATE_AFTER_MIN, 5),
   retentionMs: retentionDays * 24 * 3600_000,
+  livePositions: env.LIVE_POSITIONS === 'true',
 });
 
-const server = createServer(createHandler({ supervisor, adminPassword: env.ADMIN_PASSWORD, publicUrl }));
+const map = {
+  tileUrl: env.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: env.TILE_ATTRIBUTION || '&copy; contributeurs OpenStreetMap',
+};
+
+const server = createServer(createHandler({ supervisor, adminPassword: env.ADMIN_PASSWORD, publicUrl, map }));
 setInterval(() => supervisor.tick(), 30_000).unref();
 
 server.listen(port, () => {

@@ -16,8 +16,11 @@ import java.util.concurrent.Executors
  * l'ordre dès que le serveur répond de nouveau, pour que l'historique reste exact.
  */
 class ServerClient(private val settings: DatiSettings) {
-    /** Réponse du serveur : [ackedBy] est le superviseur qui a pris en charge l'alarme en cours. */
-    data class Reply(val ackedBy: String?)
+    /**
+     * Réponse du serveur : [ackedBy] est le superviseur qui a pris en charge l'alarme en cours ;
+     * [zonesJson] et [zonesVersion] sont présents quand les zones à risque ont changé.
+     */
+    data class Reply(val ackedBy: String?, val zonesVersion: Int? = null, val zonesJson: String? = null)
 
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -86,7 +89,11 @@ class ServerClient(private val settings: DatiSettings) {
             }
             val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
             val ack = json.optJSONObject("ack")
-            return Reply(ackedBy = ack?.optString("by")?.takeIf { it.isNotBlank() })
+            return Reply(
+                ackedBy = ack?.optString("by")?.takeIf { it.isNotBlank() },
+                zonesVersion = if (json.has("zonesVersion")) json.getInt("zonesVersion") else null,
+                zonesJson = json.optJSONArray("zones")?.toString(),
+            )
         } finally {
             connection.disconnect()
         }

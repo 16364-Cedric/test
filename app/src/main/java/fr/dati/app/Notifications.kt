@@ -23,6 +23,7 @@ object Notifications {
     private const val ALARM_ID = 2
     const val BATTERY_INFO_ID = 3
     const val NETWORK_INFO_ID = 4
+    const val ZONE_INFO_ID = 5
     private const val CHANNEL_MONITORING = "monitoring"
     private const val CHANNEL_ALARM = "alarm"
 

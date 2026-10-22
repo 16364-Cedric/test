@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const empty = () => ({ devices: [], alerts: [] });
+const empty = () => ({ devices: [], alerts: [], zones: [], zonesVersion: 0 });
 
 /** Persistance dans un fichier JSON, écrit de façon atomique. */
 export class FileStore {

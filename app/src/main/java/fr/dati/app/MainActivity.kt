@@ -148,9 +148,20 @@ class MainActivity : AppCompatActivity() {
                 ?.let { getString(R.string.detail_next_check_in, formatDuration(it - now)) }
                 ?: getString(R.string.detail_no_check_in)
             is DatiState.PreAlarm ->
-                getString(R.string.detail_prealarm, state.reason.label(this), formatDuration(state.deadlineMs - now))
+                getString(R.string.detail_prealarm, causeLabel(state.reason), formatDuration(state.deadlineMs - now))
             is DatiState.Alarm -> DatiStatus.ackedBy.value?.let { getString(R.string.acked_by, it) }
                 ?: getString(R.string.alarm_sent, state.reason.label(this))
+        }
+
+        val zone = DatiStatus.zonePresence?.takeIf { state != DatiState.Idle }
+        binding.zoneText.isVisible = zone != null
+        if (zone != null) {
+            binding.zoneText.text = getString(
+                R.string.zone_status,
+                zone.name,
+                formatDuration(now - zone.sinceMs),
+                formatDuration(zone.maxDwellMs),
+            )
         }
 
         val active = state != DatiState.Idle
@@ -159,6 +170,9 @@ class MainActivity : AppCompatActivity() {
         binding.testButton.isEnabled = state is DatiState.Monitoring
         binding.contactsWarning.isVisible = settings.contacts.isEmpty() && !settings.serverConfigured
     }
+
+    private fun causeLabel(reason: fr.dati.core.AlarmReason) =
+        DatiStatus.alarmDetail?.let { "${reason.label(this)} ($it)" } ?: reason.label(this)
 
     private fun renderChecks() {
         val issues = SelfCheck.run(this, settings)

@@ -11,6 +11,7 @@ si elle ne donne plus signe de vie.
 | **Chute** | chute libre suivie d'un choc (accéléromètre), sensibilité réglable |
 | **Immobilité** | ni secousse, ni changement d'orientation (accéléromètre), ni rotation (gyroscope) pendant la durée réglée (2 min par défaut) |
 | **Perte de verticalité** *(option)* | le téléphone, porté debout (poche de poitrine, étui de ceinture), reste couché pendant la durée réglée |
+| **Zone à risque (ATEX…)** *(avec serveur)* | présence prolongée au-delà de la durée maximale fixée pour une zone tracée sur la carte de la console (avertissement 1 min avant) |
 | **Confirmation manquée** | l'utilisateur doit appuyer sur « Je vais bien » à intervalle régulier (30 min par défaut) |
 | **SOS** | appui long sur le bouton SOS, ou **4 appuis rapides sur le bouton marche/arrêt** sans regarder l'écran : alarme immédiate |
 | **Perte de contact** *(avec serveur)* | le téléphone ne donne plus de nouvelles pendant 15 min (batterie vide, casse, pas de réseau) |
@@ -25,6 +26,7 @@ si elle ne donne plus signe de vie.
    - en option, le premier contact est appelé automatiquement ;
    - la sonnerie continue pour alerter les personnes à proximité.
 3. Quand un référent clique sur **« Je prends en charge »**, son nom s'affiche sur le téléphone.
+   La console montre l'alerte sur une **carte**, avec les zones à risque.
 4. Quand l'utilisateur arrête l'alarme, les contacts et la console en sont informés.
 
 Également : **auto-contrôle** sur l'écran principal (autorisations, batterie, capteurs, réseau,

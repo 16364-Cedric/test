@@ -28,18 +28,20 @@ import fr.dati.core.BatteryWatcher
 import fr.dati.core.DatiState
 import fr.dati.core.DatiStateMachine
 import fr.dati.core.FallDetector
+import fr.dati.core.GeoPoint
 import fr.dati.core.ImmobilityDetector
 import fr.dati.core.NetworkLossTracker
 import fr.dati.core.PressSequenceDetector
 import fr.dati.core.VerticalityDetector
+import fr.dati.core.ZoneDwellTracker
 import org.json.JSONObject
 import kotlin.math.sqrt
 
 /**
  * Service au premier plan qui surveille l'utilisateur en continu, même écran éteint :
  * accéléromètre et gyroscope (chute, immobilité), suivi GPS, échéances de confirmation,
- * verticalité, bouton marche/arrêt (SOS), batterie, réseau, liaison avec le serveur de
- * supervision, alertes.
+ * verticalité, temps de présence en zone à risque, bouton marche/arrêt (SOS), batterie, réseau,
+ * liaison avec le serveur de supervision, alertes.
  */
 class DatiService : Service(), SensorEventListener {
     private lateinit var settings: DatiSettings
@@ -58,6 +60,8 @@ class DatiService : Service(), SensorEventListener {
     private var verticalityDetector: VerticalityDetector? = null
     private val batteryWatcher = BatteryWatcher(thresholdPercent = 20)
     private var networkLoss = NetworkLossTracker(NETWORK_GRACE_MS)
+    private val zoneTracker = ZoneDwellTracker()
+    private var trackingFast: Boolean? = null
     private val powerButton = PressSequenceDetector(requiredPresses = 4, windowMs = 3_000)
     private var powerButtonSosEnabled = true
     private var wakeLock: PowerManager.WakeLock? = null
@@ -67,14 +71,20 @@ class DatiService : Service(), SensorEventListener {
     private var charging: Boolean? = null
     private var lastReminderAt = 0L
 
-    // Maintient une position récente pour les SMS d'alerte (lue via getLastKnownLocation).
-    private val locationTracker = locationListener { }
+    // Maintient une position récente pour les SMS d'alerte (lue via getLastKnownLocation) et
+    // alimente le décompte du temps passé dans les zones à risque.
+    private val locationTracker = locationListener { location ->
+        val events = zoneTracker.onLocation(now(), GeoPoint(location.latitude, location.longitude), location.accuracy)
+        events.forEach(::onZoneEvent)
+    }
 
     private val ticker = object : Runnable {
         override fun run() {
             val now = now()
             machine.tick(now)
             networkLoss.tick(now)?.let(::onNetworkEvent)
+            zoneTracker.tick(now).forEach(::onZoneEvent)
+            refreshZonePresence()
             val state = machine.state
             if (state is DatiState.Alarm && state.reason != AlarmReason.TEST && now - lastReminderAt >= REMINDER_INTERVAL_MS) {
                 lastReminderAt = now
@@ -190,6 +200,8 @@ class DatiService : Service(), SensorEventListener {
         for (type in listOf(Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GYROSCOPE)) {
             sensorManager.getDefaultSensor(type)?.let { sensorManager.registerListener(this, it, SAMPLING_PERIOD_US) }
         }
+        zoneTracker.reset()
+        zoneTracker.zones = ZoneCodec.parse(settings.zonesJson)
         startLocationTracking()
         registerReceivers()
         networkLoss = NetworkLossTracker(NETWORK_GRACE_MS)
@@ -212,6 +224,10 @@ class DatiService : Service(), SensorEventListener {
         handler.removeCallbacks(heartbeat)
         sensorManager.unregisterListener(this)
         getSystemService(LocationManager::class.java).removeUpdates(locationTracker)
+        trackingFast = null
+        zoneTracker.reset()
+        DatiStatus.zonePresence = null
+        Notifications.cancelInfo(this, Notifications.ZONE_INFO_ID)
         networkMonitor.stop()
         DatiStatus.networkAvailable = null
         Notifications.cancelInfo(this, Notifications.NETWORK_INFO_ID)
@@ -244,15 +260,20 @@ class DatiService : Service(), SensorEventListener {
         receiversRegistered = true
     }
 
+    /** Suivi GPS ; plus fréquent quand des zones à risque sont définies. */
     @SuppressLint("MissingPermission")
     private fun startLocationTracking() {
+        val fast = zoneTracker.zones.isNotEmpty()
+        if (trackingFast == fast) return
+        trackingFast = fast
         val locationManager = getSystemService(LocationManager::class.java)
+        locationManager.removeUpdates(locationTracker)
+        val interval = if (fast) ZONE_LOCATION_INTERVAL_MS else LOCATION_INTERVAL_MS
+        val distance = if (fast) 0f else LOCATION_MIN_DISTANCE_M
         for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
             try {
                 if (locationManager.isProviderEnabled(provider)) {
-                    locationManager.requestLocationUpdates(
-                        provider, LOCATION_INTERVAL_MS, LOCATION_MIN_DISTANCE_M, locationTracker, Looper.getMainLooper(),
-                    )
+                    locationManager.requestLocationUpdates(provider, interval, distance, locationTracker, Looper.getMainLooper())
                 }
             } catch (e: SecurityException) {
                 Log.w(TAG, "Localisation non autorisée", e)
@@ -282,6 +303,7 @@ class DatiService : Service(), SensorEventListener {
             DatiState.Idle -> {
                 signal.stop()
                 Notifications.cancelAlarm(this)
+                DatiStatus.alarmDetail = null
                 DatiStatus.publishAck(null)
             }
             is DatiState.Monitoring -> {
@@ -291,6 +313,8 @@ class DatiService : Service(), SensorEventListener {
                 fallDetector.reset()
                 immobilityDetector?.reset()
                 verticalityDetector?.reset()
+                zoneTracker.acknowledgeExceeded(now())
+                DatiStatus.alarmDetail = null
                 DatiStatus.publishAck(null)
                 if (old is DatiState.Alarm) alertSender.sendAllClear(wasTest = old.reason == AlarmReason.TEST)
             }
@@ -303,7 +327,7 @@ class DatiService : Service(), SensorEventListener {
                 Notifications.showAlarm(this, new)
                 lastReminderAt = now()
                 if (new.reason == AlarmReason.TEST) settings.lastTestAt = System.currentTimeMillis()
-                alertSender.sendAlert(new.reason)
+                alertSender.sendAlert(new.reason, DatiStatus.alarmDetail)
             }
         }
 
@@ -322,8 +346,8 @@ class DatiService : Service(), SensorEventListener {
     private fun describe(state: DatiState) = when (state) {
         DatiState.Idle -> "Surveillance arrêtée"
         is DatiState.Monitoring -> "Surveillance active"
-        is DatiState.PreAlarm -> "Pré-alarme : ${state.reason.label(this)}"
-        is DatiState.Alarm -> "ALARME : ${state.reason.label(this)}"
+        is DatiState.PreAlarm -> "Pré-alarme : ${state.reason.label(this)}${DatiStatus.alarmDetail?.let { " ($it)" }.orEmpty()}"
+        is DatiState.Alarm -> "ALARME : ${state.reason.label(this)}${DatiStatus.alarmDetail?.let { " ($it)" }.orEmpty()}"
     }
 
     private fun scheduleHeartbeat() {
@@ -339,12 +363,63 @@ class DatiService : Service(), SensorEventListener {
             log.add(if (reachable) "Serveur de supervision joignable" else "Serveur de supervision injoignable")
         }
         DatiStatus.serverReachable = reachable
+        if (reply?.zonesJson != null && reply.zonesVersion != null) onZonesReceived(reply.zonesVersion, reply.zonesJson)
         val ackedBy = reply?.ackedBy ?: return
         val state = machine.state
         if (state is DatiState.Alarm && DatiStatus.ackedBy.value != ackedBy) {
             log.add("Alarme prise en charge par $ackedBy")
             DatiStatus.publishAck(ackedBy)
             Notifications.showAlarm(this, state, ackedBy)
+        }
+    }
+
+    private fun onZonesReceived(version: Int, json: String) {
+        settings.zonesJson = json
+        settings.zonesVersion = version
+        zoneTracker.zones = ZoneCodec.parse(json)
+        log.add("Zones à risque mises à jour : ${zoneTracker.zones.size}")
+        if (machine.state != DatiState.Idle) startLocationTracking()
+    }
+
+    /** Présence en zone à risque : information à l'entrée, avertissement, puis pré-alarme. */
+    private fun onZoneEvent(event: ZoneDwellTracker.Event) {
+        val zone = event.zone
+        val minutes = zone.maxDwellMs / 60_000
+        when (event) {
+            is ZoneDwellTracker.Event.Entered -> {
+                log.add("Entrée en zone à risque : ${zone.name}")
+                Notifications.showInfo(
+                    this, Notifications.ZONE_INFO_ID,
+                    getString(R.string.zone_entered_title, zone.name), getString(R.string.zone_entered_text, minutes),
+                )
+            }
+            is ZoneDwellTracker.Event.Warning -> {
+                log.add("Zone ${zone.name} : temps maximal bientôt atteint")
+                Notifications.showInfo(
+                    this, Notifications.ZONE_INFO_ID,
+                    getString(R.string.zone_warning_title, zone.name),
+                    getString(R.string.zone_warning_text, (event.remainingMs / 1_000).coerceAtLeast(1)),
+                )
+                if (machine.state is DatiState.Monitoring) signal.buzz()
+            }
+            is ZoneDwellTracker.Event.Exceeded -> {
+                log.add("Zone ${zone.name} : temps maximal dépassé")
+                if (machine.state is DatiState.Monitoring) {
+                    DatiStatus.alarmDetail = zone.name
+                    machine.onDetection(AlarmReason.ZONE_TIME_EXCEEDED, now())
+                }
+            }
+            is ZoneDwellTracker.Event.Left -> {
+                log.add("Sortie de la zone ${zone.name} après ${formatDuration(event.durationMs)}")
+                Notifications.cancelInfo(this, Notifications.ZONE_INFO_ID)
+            }
+        }
+        refreshZonePresence()
+    }
+
+    private fun refreshZonePresence() {
+        DatiStatus.zonePresence = zoneTracker.currentZones().firstOrNull()?.let { (zone, since) ->
+            DatiStatus.ZonePresence(zone.name, since, zone.maxDwellMs)
         }
     }
 
@@ -414,6 +489,8 @@ class DatiService : Service(), SensorEventListener {
                 is DatiState.Alarm -> put("reason", state.reason.name)
                 else -> put("reason", JSONObject.NULL)
             }
+            if (state is DatiState.PreAlarm || state is DatiState.Alarm) DatiStatus.alarmDetail?.let { put("detail", it) }
+            put("zonesVersion", settings.zonesVersion)
             batteryPercent?.let { put("battery", it) }
             charging?.let { put("charging", it) }
             alertSender.lastKnownLocation()?.let {
@@ -468,6 +545,7 @@ class DatiService : Service(), SensorEventListener {
         private const val TICK_MS = 1_000L
         private const val SAMPLING_PERIOD_US = 20_000 // 50 Hz
         private const val LOCATION_INTERVAL_MS = 30_000L
+        private const val ZONE_LOCATION_INTERVAL_MS = 10_000L
         private const val LOCATION_MIN_DISTANCE_M = 10f
         private const val HEARTBEAT_MS = 5 * 60_000L
         private const val URGENT_HEARTBEAT_MS = 30_000L

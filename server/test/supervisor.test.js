@@ -138,3 +138,36 @@ test('loss of verticality has a readable label', () => {
   supervisor.event(device, { type: 'alarm', reason: 'LOSS_OF_VERTICALITY' });
   assert.equal(supervisor.status().alerts[0].label, 'Perte de verticalité');
 });
+
+test('zones are validated, versioned and pushed to phones that are out of date', () => {
+  const { supervisor, device } = setup();
+  assert.throws(() => supervisor.createZone({ name: 'X', type: 'polygon', maxMinutes: 5, points: [{ lat: 1, lon: 1 }] }));
+  assert.throws(() => supervisor.createZone({ name: 'X', type: 'circle', maxMinutes: 5, center: { lat: 99, lon: 0 }, radius: 10 }));
+  const zone = supervisor.createZone({ name: 'Cuve ATEX', type: 'circle', maxMinutes: 5, center: { lat: 45, lon: 5 }, radius: 30 });
+  assert.equal(supervisor.data.zonesVersion, 1);
+
+  const outdated = supervisor.heartbeat(device, { state: 'monitoring', zonesVersion: 0 });
+  assert.equal(outdated.zonesVersion, 1);
+  assert.equal(outdated.zones[0].name, 'Cuve ATEX');
+  const upToDate = supervisor.heartbeat(device, { state: 'monitoring', zonesVersion: 1 });
+  assert.equal(upToDate.zones, undefined);
+
+  assert.ok(supervisor.deleteZone(zone.id));
+  assert.equal(supervisor.data.zonesVersion, 2);
+});
+
+test('zone overstay alarm shows the zone name', () => {
+  const { supervisor, device } = setup();
+  supervisor.event(device, { type: 'alarm', reason: 'ZONE_TIME_EXCEEDED', detail: 'Cuve ATEX' });
+  assert.equal(supervisor.status().alerts[0].label, 'Durée maximale dépassée en zone à risque (Cuve ATEX)');
+});
+
+test('live positions are only exposed when enabled', () => {
+  const { supervisor, device } = setup();
+  supervisor.heartbeat(device, { state: 'monitoring', location: { lat: 3, lon: 4 } });
+  assert.equal(supervisor.status().devices[0].location, undefined);
+  supervisor.livePositions = true;
+  assert.deepEqual([supervisor.status().devices[0].location.lat, supervisor.status().devices[0].location.lon], [3, 4]);
+  supervisor.event(device, { type: 'stop', state: 'idle' });
+  assert.equal(supervisor.status().devices[0].location, undefined, 'jamais hors surveillance');
+});

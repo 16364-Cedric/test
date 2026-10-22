@@ -11,6 +11,9 @@ enum class AlarmReason {
     /** Le téléphone, porté verticalement, est resté couché trop longtemps (personne à terre). */
     LOSS_OF_VERTICALITY,
 
+    /** Durée maximale de présence dépassée dans une zone à risque (ATEX…). */
+    ZONE_TIME_EXCEEDED,
+
     /** L'utilisateur n'a pas confirmé sa présence à temps. */
     MISSED_CHECK_IN,
 

@@ -32,6 +32,9 @@ object SelfCheck {
         if (!granted(Manifest.permission.ACCESS_FINE_LOCATION) && !granted(Manifest.permission.ACCESS_COARSE_LOCATION)) {
             error(R.string.check_location_permission)
         }
+        if (ZoneCodec.parse(settings.zonesJson).isNotEmpty() && !granted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            warning(R.string.check_zones_need_fine_location)
+        }
         if (settings.contacts.isNotEmpty() && !granted(Manifest.permission.SEND_SMS)) error(R.string.check_sms_permission)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !granted(Manifest.permission.POST_NOTIFICATIONS)) {
             error(R.string.check_notification_permission)

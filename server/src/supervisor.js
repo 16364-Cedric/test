@@ -17,6 +17,7 @@ const REASON_LABELS = {
   LOSS_OF_VERTICALITY: 'Perte de verticalité',
   MISSED_CHECK_IN: 'Confirmation de présence manquée',
   SOS: 'Appel SOS',
+  ZONE_TIME_EXCEEDED: 'Durée maximale dépassée en zone à risque',
   TEST: 'Essai',
 };
 
@@ -26,6 +27,16 @@ export function hashToken(token) {
 
 function newId(bytes = 6) {
   return randomBytes(bytes).toString('hex');
+}
+
+function finite(value, min, max, label) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < min || n > max) throw new Error(`${label} : valeur attendue entre ${min} et ${max}`);
+  return n;
+}
+
+function point(p) {
+  return { lat: finite(p?.lat, -90, 90, 'Latitude'), lon: finite(p?.lon, -180, 180, 'Longitude') };
 }
 
 function mapsLink(location) {
@@ -46,6 +57,7 @@ export class Supervisor {
     heartbeatTimeoutMs = 15 * 60_000,
     escalateAfterMs = 5 * 60_000,
     retentionMs = 30 * 24 * 3600_000,
+    livePositions = false,
   }) {
     this.store = store;
     this.notifier = notifier;
@@ -53,6 +65,7 @@ export class Supervisor {
     this.heartbeatTimeoutMs = heartbeatTimeoutMs;
     this.escalateAfterMs = escalateAfterMs;
     this.retentionMs = retentionMs;
+    this.livePositions = livePositions;
   }
 
   get data() {
@@ -96,6 +109,42 @@ export class Supervisor {
     return this.data.devices.find((d) => d.tokenHash === hash) ?? null;
   }
 
+  /** Zone à risque : cercle {center, radius} ou polygone {points}, durée maximale en minutes. */
+  createZone(input = {}) {
+    const name = String(input.name ?? '').trim();
+    if (!name) throw new Error('Le nom de la zone est obligatoire');
+    const zone = {
+      id: newId(),
+      name: name.slice(0, 80),
+      type: input.type,
+      maxMinutes: finite(input.maxMinutes, 1, 480, 'Durée maximale (min)'),
+    };
+    if (input.type === 'circle') {
+      zone.center = point(input.center);
+      zone.radius = finite(input.radius, 1, 5000, 'Rayon (m)');
+    } else if (input.type === 'polygon') {
+      if (!Array.isArray(input.points) || input.points.length < 3 || input.points.length > 100) {
+        throw new Error('Un polygone doit avoir entre 3 et 100 sommets');
+      }
+      zone.points = input.points.map(point);
+    } else {
+      throw new Error('Type de zone inconnu');
+    }
+    this.data.zones.push(zone);
+    this.data.zonesVersion += 1;
+    this.store.save();
+    return zone;
+  }
+
+  deleteZone(id) {
+    const before = this.data.zones.length;
+    this.data.zones = this.data.zones.filter((z) => z.id !== id);
+    if (this.data.zones.length === before) return false;
+    this.data.zonesVersion += 1;
+    this.store.save();
+    return true;
+  }
+
   acknowledge(alertId, by) {
     const alert = this.data.alerts.find((a) => a.id === alertId);
     if (!alert || alert.resolvedAt) return null;
@@ -120,11 +169,15 @@ export class Supervisor {
     return alert;
   }
 
-  /** Vue pour la console : appareils sans secret ni position, alertes avec position. */
+  /**
+   * Vue pour la console : appareils sans secret, alertes avec position. Les positions courantes
+   * des salariés ne sont exposées que si l'option livePositions est activée (à valider avec le DPO).
+   */
   status() {
     const devices = this.data.devices.map(({ tokenHash, lastLocation, ...rest }) => ({
       ...rest,
       online: rest.monitoring && rest.lastSeen !== null && this.now() - rest.lastSeen <= this.heartbeatTimeoutMs,
+      ...(this.livePositions && rest.monitoring && lastLocation ? { location: lastLocation } : {}),
     }));
     const alerts = [...this.data.alerts]
       .sort((a, b) => b.createdAt - a.createdAt)
@@ -134,7 +187,7 @@ export class Supervisor {
         label: this.describe(a),
         mapsUrl: mapsLink(a.location),
       }));
-    return { devices, alerts, serverTime: this.now() };
+    return { devices, alerts, zones: this.data.zones, livePositions: this.livePositions, serverTime: this.now() };
   }
 
   // --- Appareils ------------------------------------------------------------
@@ -153,7 +206,7 @@ export class Supervisor {
       });
     }
     this.store.save();
-    return this.reply(device);
+    return this.reply(device, payload);
   }
 
   /** Événement ponctuel : start, stop, prealarm, alarm, ok, low_battery, shutdown, network_restored. */
@@ -170,7 +223,12 @@ export class Supervisor {
         break;
       case 'alarm': {
         const test = payload.reason === 'TEST';
-        const alert = this.createAlert(device, AlertType.ALARM, { reason: payload.reason ?? null, location, test });
+        const alert = this.createAlert(device, AlertType.ALARM, {
+          reason: payload.reason ?? null,
+          location,
+          test,
+          detail: typeof payload.detail === 'string' ? payload.detail.slice(0, 200) : null,
+        });
         this.notifier.send({
           title: `${test ? '[ESSAI] ' : ''}ALARME DATI : ${device.name}`,
           message: [this.describe(alert), mapsLink(location)].filter(Boolean).join('\n'),
@@ -217,7 +275,7 @@ export class Supervisor {
         throw new Error(`Type d'événement inconnu : ${payload.type}`);
     }
     this.store.save();
-    return this.reply(device);
+    return this.reply(device, payload);
   }
 
   // --- Tâche périodique -----------------------------------------------------
@@ -273,7 +331,7 @@ export class Supervisor {
   describe(alert) {
     switch (alert.type) {
       case AlertType.ALARM:
-        return `${alert.test ? 'Essai – ' : ''}${REASON_LABELS[alert.reason] ?? 'Alarme'}`;
+        return `${alert.test ? 'Essai – ' : ''}${REASON_LABELS[alert.reason] ?? 'Alarme'}${alert.detail ? ` (${alert.detail})` : ''}`;
       case AlertType.LOST_CONTACT:
         return 'Perte de contact avec le téléphone';
       case AlertType.LOW_BATTERY:
@@ -300,12 +358,13 @@ export class Supervisor {
     }
   }
 
-  createAlert(device, type, { reason = null, location = null, test = false, durationMs = null } = {}) {
+  createAlert(device, type, { reason = null, location = null, test = false, durationMs = null, detail = null } = {}) {
     const alert = {
       id: newId(),
       deviceId: device.id,
       type,
       reason,
+      detail,
       test,
       durationMs,
       location: location ? { ...location } : null,
@@ -333,12 +392,20 @@ export class Supervisor {
     return resolved;
   }
 
-  /** Réponse renvoyée au téléphone : indique si son alarme a été prise en charge. */
-  reply(device) {
+  /**
+   * Réponse renvoyée au téléphone : prise en charge de son alarme, et zones à risque si le
+   * téléphone n'a pas la version courante.
+   */
+  reply(device, payload = {}) {
     const alarm = this.openAlert(device.id, AlertType.ALARM);
-    return {
+    const reply = {
       serverTime: this.now(),
       ack: alarm?.ackedAt ? { by: alarm.ackedBy, at: alarm.ackedAt } : null,
     };
+    if (payload.zonesVersion !== this.data.zonesVersion) {
+      reply.zonesVersion = this.data.zonesVersion;
+      reply.zones = this.data.zones;
+    }
+    return reply;
   }
 }

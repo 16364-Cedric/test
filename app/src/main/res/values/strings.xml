@@ -41,6 +41,7 @@
     <string name="reason_fall">Chute détectée</string>
     <string name="reason_immobility">Absence de mouvement</string>
     <string name="reason_loss_of_verticality">Perte de verticalité</string>
+    <string name="reason_zone_time_exceeded">Durée maximale dépassée en zone à risque</string>
     <string name="reason_missed_check_in">Confirmation de présence manquée</string>
     <string name="reason_sos">Appel SOS</string>
     <string name="reason_test">Essai</string>
@@ -145,6 +146,15 @@
     <string name="config_summary_battery">Alerte batterie sous %1$d %%</string>
     <string name="config_apply">Appliquer</string>
     <string name="config_applied">Configuration appliquée</string>
+
+    <!-- Zones à risque -->
+    <string name="zone_status">⚠️ Zone « %1$s » depuis %2$s (max %3$s)</string>
+    <string name="zone_entered_title">Zone à risque : %1$s</string>
+    <string name="zone_entered_text">Présence limitée à %1$d min. Vous serez prévenu 1 min avant la fin.</string>
+    <string name="zone_warning_title">Quittez la zone %1$s</string>
+    <string name="zone_warning_text">Durée maximale atteinte dans %1$d s : une pré-alarme va se déclencher.</string>
+    <string name="zone_prealarm_hint">Quittez la zone. « Je vais bien » relance le décompte si vous devez y rester.</string>
+    <string name="check_zones_need_fine_location">Localisation précise non autorisée : le temps passé en zone à risque ne peut pas être mesuré.</string>
 
     <!-- Réseau -->
     <string name="network_lost_title">Réseau perdu</string>

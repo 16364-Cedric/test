@@ -48,8 +48,18 @@ L'INRS publie des ressources sur le travail isolé et les dispositifs d'alarme (
 | Journal des événements | Téléphone uniquement | – | Le salarié |
 | Nom, numéros des contacts | Téléphone, serveur (nom) | – | Superviseurs |
 
-Le serveur conserve la **dernière position** de chaque téléphone uniquement pour pouvoir la
-joindre à une alerte « perte de contact » ; la console ne l'affiche jamais en dehors d'une alerte.
+Le serveur conserve la **dernière position** de chaque téléphone pour pouvoir la joindre à une
+alerte « perte de contact ». Par défaut, la console ne l'affiche jamais en dehors d'une alerte.
+
+**Positions en direct** (option `LIVE_POSITIONS`) : afficher en permanence la position des
+salariés protégés est une géolocalisation continue, bien plus intrusive. Elle doit être justifiée
+par l'analyse de risques (par exemple, des secours plus rapides sur un grand site), inscrite dans
+l'AIPD, présentée au CSE et mentionnée dans la notice d'information. Elle reste limitée aux
+périodes où la protection est active.
+
+**Zones à risque** : le temps passé dans une zone est calculé sur le téléphone ; les entrées et
+sorties ne sont pas transmises. Seul un dépassement de durée suivi d'une alarme est signalé,
+avec le nom de la zone.
 Aucune donnée n'est collectée quand la protection est arrêtée : le salarié l'arrête en fin de
 poste, pendant ses pauses et en dehors du temps de travail.
 

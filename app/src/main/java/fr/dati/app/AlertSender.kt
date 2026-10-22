@@ -33,11 +33,12 @@ class AlertSender(
      * Envoie immédiatement l'alerte avec la dernière position connue, puis un second SMS
      * dès qu'une position fraîche est obtenue.
      */
-    fun sendAlert(reason: AlarmReason) {
+    fun sendAlert(reason: AlarmReason, detail: String? = null) {
         val last = lastKnownLocation()
         val time = DateFormat.getTimeFormat(context).format(Date())
         val template = if (reason == AlarmReason.TEST) R.string.sms_test else R.string.sms_alert
-        sendSms(context.getString(template, name(), reason.label(context), time, where(last)))
+        val cause = detail?.let { "${reason.label(context)} ($it)" } ?: reason.label(context)
+        sendSms(context.getString(template, name(), cause, time, where(last)))
 
         requestFreshLocation { fresh ->
             if (last == null || fresh.time > last.time) {

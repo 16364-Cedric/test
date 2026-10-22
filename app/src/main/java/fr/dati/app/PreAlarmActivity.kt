@@ -85,19 +85,24 @@ class PreAlarmActivity : AppCompatActivity() {
         when (state) {
             is DatiState.PreAlarm -> {
                 binding.titleText.setText(R.string.prealarm_title)
-                binding.reasonText.text = state.reason.label(this)
+                binding.reasonText.text = causeLabel(state.reason)
+                binding.hintText.isVisible = state.reason == AlarmReason.ZONE_TIME_EXCEEDED
                 binding.countdownText.text = formatDuration(state.deadlineMs - DatiService.now())
                 binding.okButton.setText(R.string.im_ok)
             }
             is DatiState.Alarm -> {
                 binding.titleText.setText(R.string.alarm_title)
-                binding.reasonText.text = state.reason.label(this)
+                binding.reasonText.text = causeLabel(state.reason)
+                binding.hintText.isVisible = false
                 binding.countdownText.setText(R.string.alarm_contacts_notified)
                 binding.okButton.setText(R.string.stop_alarm)
             }
             DatiState.Idle, is DatiState.Monitoring -> Unit
         }
     }
+
+    private fun causeLabel(reason: AlarmReason) =
+        DatiStatus.alarmDetail?.let { "${reason.label(this)}\n$it" } ?: reason.label(this)
 
     /** Passe un appel au premier contact (une seule fois par alarme) si l'option est activée. */
     private fun maybeCallFirstContact(state: DatiState.Alarm) {

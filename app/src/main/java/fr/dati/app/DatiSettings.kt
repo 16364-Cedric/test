@@ -71,6 +71,15 @@ class DatiSettings(context: Context) {
 
     val serverConfigured: Boolean get() = serverUrl.isNotBlank() && deviceToken.isNotBlank()
 
+    /** Zones à risque reçues du serveur (JSON) et leur version ; -1 tant qu'aucune n'a été reçue. */
+    var zonesJson: String
+        get() = prefs.getString(KEY_ZONES, "[]").orEmpty()
+        set(value) = prefs.edit { putString(KEY_ZONES, value) }
+
+    var zonesVersion: Int
+        get() = prefs.getInt(KEY_ZONES_VERSION, -1)
+        set(value) = prefs.edit { putInt(KEY_ZONES_VERSION, value) }
+
     /** Heure (horloge murale) du dernier essai complet de la chaîne d'alerte, 0 si jamais. */
     var lastTestAt: Long
         get() = prefs.getLong(KEY_LAST_TEST, 0L)
@@ -123,5 +132,7 @@ class DatiSettings(context: Context) {
         private const val KEY_SERVER = "server_url"
         private const val KEY_TOKEN = "device_token"
         private const val KEY_LAST_TEST = "last_test_at"
+        private const val KEY_ZONES = "zones_json"
+        private const val KEY_ZONES_VERSION = "zones_version"
     }
 }

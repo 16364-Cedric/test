@@ -63,6 +63,13 @@ dati.mon-entreprise.fr {
 | `ESCALATE_AFTER_MIN` | Délai avant escalade d'une alerte non prise en charge | `5` |
 | `RETENTION_DAYS` | Conservation des alertes clôturées | `30` |
 | `DATA_FILE` | Fichier de données | `/data/dati.json` |
+| `LIVE_POSITIONS` | `true` pour afficher sur la carte la position des salariés protégés, hors alerte (à valider avec le DPO, voir le cadre juridique) | désactivé |
+| `TILE_URL` | Fond de carte (modèle `{z}/{x}/{y}`) | OpenStreetMap |
+| `TILE_ATTRIBUTION` | Mention de la source du fond de carte | contributeurs OpenStreetMap |
+
+**Fond de carte** : les serveurs d'OpenStreetMap conviennent à un usage modéré (quelques
+postes de supervision). Pour un usage plus intensif ou un réseau fermé, utiliser un fournisseur
+de tuiles ou un serveur interne, et renseigner `TILE_URL`.
 
 **Notifications des référents** : installer l'application **ntfy** sur leurs téléphones et
 s'abonner au sujet choisi. Choisir un nom de sujet long et imprévisible (il fait office de mot de
@@ -137,7 +144,33 @@ configuration) :
 Une valeur invalide (serveur non HTTPS, numéro mal formé…) fait rejeter toute la configuration ;
 l'erreur est notée dans le journal de l'application.
 
-## 4. Fiabilité selon les téléphones
+## 4. Zones à risque (ATEX…)
+
+Dans la console, section **Carte** → **Zones à risque** : nommer la zone, fixer la durée
+maximale de présence, puis la tracer sur la carte (polygone : cliquer les sommets ; cercle :
+cliquer le centre et régler le rayon).
+
+Les téléphones reçoivent les zones à leur prochain contact avec le serveur (au démarrage de la
+protection, puis toutes les 5 minutes) et les conservent pour fonctionner sans réseau. Le
+décompte se fait **sur le téléphone** :
+
+1. à l'entrée dans la zone, le salarié est informé de la durée autorisée ;
+2. une minute avant la limite, le téléphone vibre et l'invite à sortir ;
+3. à la limite, une **pré-alarme** se déclenche ; sans réponse, l'**alarme** part avec le nom de
+   la zone. « Je vais bien » relance le décompte pour une nouvelle période.
+
+**Limites de la localisation par GPS** :
+- La précision est de 5 à 15 m à l'extérieur, et peut se dégrader à 30 m ou plus près des
+  bâtiments ou à l'intérieur ; les positions moins précises que 50 m sont ignorées.
+- Dessiner les zones **plus larges que la zone réelle** (marge de 10 à 20 m) pour ne pas sous-estimer le
+  temps de présence.
+- Dans un bâtiment ou un local en sous-sol, le GPS peut ne pas fonctionner du tout : la
+  détection n'est alors pas fiable. Pour ces cas, une détection par **balises Bluetooth**
+  placées aux accès de la zone serait nécessaire (évolution possible de l'application).
+- La localisation précise doit être autorisée sur le téléphone ; l'écran principal le signale
+  sinon.
+
+## 5. Fiabilité selon les téléphones
 
 Certains fabricants arrêtent les applications en arrière-plan malgré le service au premier plan.
 Pour chaque modèle utilisé dans l'entreprise, **tester une nuit complète** écran éteint et
@@ -154,7 +187,7 @@ vérifier qu'aucune « perte de contact » n'apparaît dans la console.
 
 Référence détaillée : <https://dontkillmyapp.com>.
 
-## 5. Phase pilote recommandée
+## 6. Phase pilote recommandée
 
 1. 3 à 5 volontaires, 2 à 3 semaines, sur les vrais postes de travail.
 2. Un essai guidé par personne et par semaine.
