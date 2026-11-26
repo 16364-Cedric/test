@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dégradé NTN Group du bleu au violet, angle 45° (charte p. 17), utilisé en aplat de couleur. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="45"
+        android:endColor="@color/brand_violet"
+        android:startColor="@color/brand_primary"
+        android:type="linear" />
+</shape>

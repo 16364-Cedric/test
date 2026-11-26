@@ -8,10 +8,14 @@
   <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
   <script src="/vendor/leaflet/leaflet.js"></script>
   <style>
+    /* Charte graphique NTN : bleu NTN, bleu SNR, gris anthracite, dégradé bleu → violet,
+       titres en Quicksand. Rouge, orange et vert restent les couleurs de sécurité. */
+    @font-face { font-family: 'Quicksand'; font-weight: 700; src: url('/vendor/brand/quicksand-bold.ttf') format('truetype'); }
     :root {
-      --bg: #f5f5f4; --card: #ffffff; --text: #1c1917; --muted: #78716c; --border: #e7e5e4;
+      --brand: #009adf; --brand-dark: #005ca9; --brand-violet: #7c2c7e;
+      --bg: #f4f7fa; --card: #ffffff; --text: #4a4a49; --muted: #7a7a79; --border: #e3e8ee;
       --red: #c62828; --red-bg: #fdecea; --orange: #e65100; --orange-bg: #fff3e0;
-      --green: #2e7d32; --green-bg: #e8f5e9; --grey-bg: #f0efee;
+      --green: #2e7d32; --green-bg: #e8f5e9; --grey-bg: #f0f2f4;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -23,9 +27,13 @@
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); background: var(--card); }
-    header h1 { margin: 0; font-size: 20px; }
-    #updated { color: var(--muted); font-size: 13px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: linear-gradient(45deg, var(--brand), var(--brand-violet)); color: #fff; }
+    header .brand { display: flex; align-items: center; gap: 14px; }
+    header img { height: 36px; display: block; }
+    header h1 { margin: 0; font: 700 20px 'Quicksand', system-ui, sans-serif; }
+    #updated { color: rgba(255, 255, 255, 0.85); font-size: 13px; }
+    h2 { font-family: 'Quicksand', system-ui, sans-serif; color: var(--brand); }
+    button.primary.brand { background: var(--brand); border-color: var(--brand); }
     main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
     section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
     h2 { margin: 0 0 12px; font-size: 17px; }
@@ -70,7 +78,10 @@
 </head>
 <body>
   <header>
-    <h1>Supervision DATI</h1>
+    <div class="brand">
+      <img src="/vendor/brand/logo-white.png" alt="NTN – Make the world NAMERAKA">
+      <h1>Supervision DATI</h1>
+    </div>
     <span id="updated">Chargement…</span>
   </header>
   <main>
@@ -107,7 +118,7 @@
         <label>Signal minimal des balises (dBm) <input name="minRssi" type="number" min="-100" max="-30" value="-75"></label>
         <p id="zone-help"></p>
         <button type="button" id="zone-clear">Effacer le tracé</button>
-        <button type="submit" class="primary">Enregistrer la zone</button>
+        <button type="submit" class="primary brand">Enregistrer la zone</button>
       </form>
       <ul class="zone-list" id="zones"></ul>
     </section>
@@ -136,7 +147,7 @@
         <label>Sensibilité chute
           <select name="sensitivity"><option value="LOW">Faible</option><option value="NORMAL" selected>Normale</option><option value="HIGH">Élevée</option></select>
         </label>
-        <button class="primary" type="submit">Créer et afficher le QR code</button>
+        <button class="primary brand" type="submit">Créer et afficher le QR code</button>
       </form>
       <div id="qr-result">
         <div id="qr"></div>

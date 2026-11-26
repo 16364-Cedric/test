@@ -3,6 +3,7 @@
     <color name="dati_red">#C62828</color>
     <color name="dati_green">#2E7D32</color>
     <color name="dati_orange">#E65100</color>
-    <color name="dati_grey">#757575</color>
+    <!-- Protection arrêtée : gris anthracite de la charte NTN. -->
+    <color name="dati_grey">#4A4A49</color>
     <color name="white">#FFFFFF</color>
 </resources>

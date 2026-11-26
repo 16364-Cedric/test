@@ -1,60 +1,49 @@
-# Adapter l'application à la charte graphique de l'entreprise
+# Charte graphique NTN appliquée à l'application et à la console
 
-L'apparence de l'application est centralisée dans deux fichiers : il suffit de les remplacer,
-sans toucher au code.
+Source : *Charte graphique NTN – V2*. L'apparence est centralisée : pour la faire évoluer, il
+suffit de remplacer les fichiers ci-dessous, sans toucher au code.
 
-## 1. Le logo
+## Ce qui est appliqué
 
-Fichier actuel : `app/src/main/res/drawable/brand_logo.xml` (bouclier provisoire).
+| Élément de la charte | Application Android | Console de supervision |
+|---|---|---|
+| Logo NTN sur fond blanc (p. 5) | en tête de l'écran principal | – |
+| Logo NTN blanc sur fond bleu (p. 5) | – | bandeau d'en-tête |
+| Bleu NTN `#009ADF` (p. 13) | couleur principale, bouton « Démarrer », icône | titres, boutons courants |
+| Bleu SNR `#005CA9` (p. 13) | barre d'état, couleur secondaire | – |
+| Gris anthracite `#4A4A49` (p. 13) | texte, état « Protection désactivée » | texte |
+| Dégradé bleu → violet `#7C2C7E`, 45° (p. 17) | barre de titre | bandeau d'en-tête |
+| Quicksand pour les titres (p. 11) | titres, barre de titre, état de la protection | titres |
+| Fond blanc à privilégier (p. 5) | fond des écrans | fond des cartes |
 
-Il s'affiche en haut de l'écran principal et dans la fenêtre « À propos ».
+**Helvetica** (texte courant, p. 11) n'est pas intégrée : c'est une police sous licence
+commerciale. L'application utilise la police du téléphone (Roboto), visuellement proche. Pour
+l'intégrer, il faut une licence d'intégration logicielle (« app embedding ») ; déposer alors les
+fichiers dans `app/src/main/res/font/` et les déclarer dans `values/themes.xml`.
 
-- **Logo en PNG** : supprimer `brand_logo.xml` et déposer le fichier sous le nom
-  `app/src/main/res/drawable-nodpi/brand_logo.png` (fond transparent, environ 600 px de large).
-- **Logo en SVG** : le convertir en « vector drawable » Android (Android Studio : *New → Vector
-  Asset → Local file*) et remplacer `brand_logo.xml` par le résultat. C'est la meilleure option :
-  le logo reste net sur tous les écrans.
+**Couleurs de sécurité hors charte**, volontairement : rouge (alarme, SOS, écran de pré-alarme),
+vert (« Je vais bien », protection active), orange (pré-alarme, zones à risque). Elles doivent
+rester identiques et reconnaissables dans l'urgence.
 
-Le nom de fichier doit rester `brand_logo` (minuscules, sans espace).
+## Fichiers
 
-## 2. Les couleurs
-
-Fichier : `app/src/main/res/values/brand.xml`.
-
-| Couleur | Rôle |
+| Fichier | Contenu |
 |---|---|
-| `brand_primary` | barre de titre, barre d'état, bouton « Démarrer la protection » |
-| `brand_on_primary` | texte posé sur la couleur principale (en général blanc) |
-| `brand_secondary` | éléments secondaires (contours de boutons, liens) |
-| `brand_background` | fond des écrans |
+| `app/src/main/res/values/brand.xml` | couleurs de la charte |
+| `app/src/main/res/drawable/brand_gradient.xml` | dégradé bleu → violet |
+| `app/src/main/res/drawable-nodpi/brand_logo.png` | logo bleu, fond transparent |
+| `app/src/main/res/drawable-nodpi/brand_logo_white.png` | logo blanc, fond transparent |
+| `app/src/main/res/drawable-nodpi/ic_launcher_foreground.png` + `mipmap-anydpi-v26/ic_launcher.xml` | icône (lettres NTN blanches sur bleu NTN) |
+| `app/src/main/res/font/quicksand_*.ttf` | police Quicksand (licence SIL OFL, voir `docs/QUICKSAND-OFL.txt`) |
+| `app/src/main/res/values/themes.xml` | application des couleurs et polices |
+| `server/public/vendor/brand/` | logo blanc et police pour la console |
+| `server/public/index.html` (début du `<style>`) | couleurs de la console |
 
-Saisir les codes hexadécimaux de la charte (`#RRGGBB`).
+## Logo
 
-**Les couleurs de sécurité ne suivent pas la charte** et sont dans `colors.xml` : rouge pour
-l'alarme et le SOS, vert pour « Je vais bien », orange pour la pré-alarme et les zones à risque.
-Elles doivent rester identiques d'une application à l'autre pour être reconnues dans l'urgence.
-Vérifier que la couleur principale de la charte se distingue bien du rouge d'alarme.
+Les logos ont été extraits de la page 5 de la charte (rendu à 400 dpi, fond rendu transparent).
+Pour une qualité maximale, les remplacer par les fichiers sources fournis par le service
+communication (PNG haute définition à fond transparent, ou SVG à convertir en « vector drawable »
+via Android Studio : *New → Vector Asset*), en gardant les mêmes noms de fichiers.
 
-## 3. La police (facultatif)
-
-Déposer les fichiers de police (`.ttf`) dans `app/src/main/res/font/` (nom en minuscules, par
-exemple `marque_regular.ttf`), puis ajouter dans `values/themes.xml`, dans `Theme.Dati` :
-
-```xml
-<item name="fontFamily">@font/marque_regular</item>
-<item name="android:fontFamily">@font/marque_regular</item>
-```
-
-Vérifier que la licence de la police autorise son intégration dans une application.
-
-## 4. L'icône de l'application
-
-Fichiers : `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` (fond) et
-`drawable/ic_launcher_foreground.xml` (motif). Pour la remplacer, Android Studio : *New → Image
-Asset* à partir du logo.
-
-## Droits d'utilisation
-
-Le logo et la charte sont des éléments protégés de l'entreprise : leur intégration doit être
-validée par le service communication, en particulier pour une application diffusée hors du
-réseau interne.
+L'utilisation du logo dans l'application doit être validée par le service communication.

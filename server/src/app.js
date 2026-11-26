@@ -73,9 +73,12 @@ export function buildEnrollUrl(options) {
 
 /** Bibliothèques servies telles quelles (liste fermée : aucun chemin fourni par le client n'est lu). */
 const VENDOR_FILES = {
-  'qrcode.js': 'text/javascript',
-  'leaflet/leaflet.js': 'text/javascript',
-  'leaflet/leaflet.css': 'text/css',
+  'qrcode.js': 'text/javascript; charset=utf-8',
+  'leaflet/leaflet.js': 'text/javascript; charset=utf-8',
+  'leaflet/leaflet.css': 'text/css; charset=utf-8',
+  // Charte graphique NTN : logo blanc pour l'en-tête dégradé, police des titres.
+  'brand/logo-white.png': 'image/png',
+  'brand/quicksand-bold.ttf': 'font/ttf',
 };
 
 const DEFAULT_MAP = {
@@ -89,7 +92,7 @@ export function createHandler({ supervisor, adminPassword, publicUrl, consoleHtm
   const enrollHtml = readFileSync(new URL('../public/enroll.html', import.meta.url), 'utf8');
   const vendor = Object.fromEntries(Object.entries(VENDOR_FILES).map(([file, type]) => [
     `/vendor/${file}`,
-    { type, body: readFileSync(new URL(`../public/vendor/${file}`, import.meta.url), 'utf8') },
+    { type, body: readFileSync(new URL(`../public/vendor/${file}`, import.meta.url)) },
   ]));
 
   function requireAdmin(req) {
@@ -120,7 +123,8 @@ export function createHandler({ supervisor, adminPassword, publicUrl, consoleHtm
     if (method === 'GET' && path === '/c') return send(res, 200, enrollHtml);
     if (method === 'GET' && vendor[path]) {
       const { type, body } = vendor[path];
-      return send(res, 200, body, { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'max-age=86400' });
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(body);
     }
 
     // API des téléphones

@@ -120,7 +120,6 @@ class MainActivity : AppCompatActivity() {
         val version = getString(R.string.version, info.versionName, PackageInfoCompat.getLongVersionCode(info))
         AlertDialog.Builder(this)
             .setTitle(R.string.about_title)
-            .setIcon(R.drawable.brand_logo)
             .setMessage("$version\n\n${getString(R.string.disclaimer)}")
             .setPositiveButton(android.R.string.ok, null)
             .show()

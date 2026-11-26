@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Charte graphique de l'application : SEUL fichier de couleurs à modifier pour l'adapter à la
-    charte de l'entreprise (voir docs/charte-graphique.md). Le logo est dans
-    drawable/brand_logo.xml (ou brand_logo.png à sa place).
+    Charte graphique NTN (CHARTE-GRAPHIQUE_V2) : SEUL fichier de couleurs de marque à modifier.
+    Logos : drawable-nodpi/brand_logo.png (bleu, fonds clairs) et brand_logo_white.png (blanc,
+    fonds bleus). Typographie des titres : font/quicksand_*.ttf. Voir docs/charte-graphique.md.
 
     Les couleurs de sécurité (rouge alarme, vert « Je vais bien », orange pré-alarme) sont dans
-    colors.xml et ne doivent pas suivre la charte : elles doivent rester reconnaissables.
-
-    Valeurs provisoires, en attendant la charte officielle.
+    colors.xml et ne suivent pas la charte : elles doivent rester reconnaissables dans l'urgence.
 -->
 <resources>
-    <!-- Couleur principale : barre de titre, boutons courants. -->
-    <color name="brand_primary">#1F3A5F</color>
-    <!-- Texte et icônes posés sur la couleur principale. -->
+    <!-- Couleurs principales (charte p. 13) -->
+    <color name="brand_primary">#009ADF</color>         <!-- Bleu NTN -->
+    <color name="brand_primary_dark">#005CA9</color>    <!-- Bleu SNR -->
+    <color name="brand_text">#4A4A49</color>            <!-- Gris anthracite -->
     <color name="brand_on_primary">#FFFFFF</color>
-    <!-- Couleur d'accent : éléments secondaires (contours, liens). -->
-    <color name="brand_secondary">#4A6FA5</color>
-    <!-- Fond des écrans. -->
-    <color name="brand_background">#F5F6F8</color>
-    <!-- Nom affiché sous le logo. -->
-    <string name="brand_name" translatable="false">DATI</string>
+
+    <!-- Couleurs secondaires, avec parcimonie (charte p. 15) -->
+    <color name="brand_violet">#7C2C7E</color>
+    <color name="brand_secondary">#005CA9</color>
+
+    <!-- Fond blanc à privilégier (charte p. 5) -->
+    <color name="brand_background">#FFFFFF</color>
+
+    <string name="brand_name" translatable="false">NTN – Make the world NAMERAKA</string>
 </resources>
