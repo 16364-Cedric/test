@@ -49,16 +49,16 @@ jobs:
           name: captures
           path: captures/
 
-      - name: Enregistrer les captures dans docs/captures
+      - name: Enregistrer les captures dans docs/ecrans
         run: |
           sudo apt-get install -y -q imagemagick >/dev/null
-          mkdir -p docs/captures
-          rm -f docs/captures/*.jpg
+          mkdir -p docs/ecrans
+          rm -f docs/ecrans/*.jpg
           for f in captures/*.png; do
-            convert "$f" -resize 540x -quality 85 "docs/captures/$(basename "${f%.png}").jpg"
+            convert "$f" -resize 540x -quality 85 "docs/ecrans/$(basename "${f%.png}").jpg"
           done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/captures
+          git add docs/ecrans
           git diff --cached --quiet || git commit -m "Captures d'écran de l'application [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
