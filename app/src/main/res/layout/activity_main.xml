@@ -1,162 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Écran principal épuré : l'état, puis les seules actions de sécurité utiles dans cet état.
+    Les fonctions secondaires (réglages, journal, à propos) sont dans le menu.
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceHeadlineMedium"
-            android:textStyle="bold" />
+        <!-- Logo de l'entreprise (charte : drawable/brand_logo) -->
+        <ImageView
+            android:id="@+id/brandLogo"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="12dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/brand_name"
+            android:src="@drawable/brand_logo" />
 
-        <TextView
-            android:id="@+id/detailText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceBodyLarge" />
-
-        <TextView
-            android:id="@+id/zoneText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@color/dati_orange"
-            android:gravity="center"
-            android:padding="10dp"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/contactsWarning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:text="@string/contacts_warning"
-            android:textColor="@color/dati_red"
-            android:visibility="gone" />
-
+        <!-- État de la protection : bandeau coloré selon l'état -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/statusCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp">
+            app:cardCornerRadius="16dp"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/checks_title"
-                    android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-                <TextView
-                    android:id="@+id/checksText"
+                    android:id="@+id/statusText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:lineSpacingExtra="4dp"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/detailText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/zoneText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@color/dati_orange"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/toggleButton"
+        <!-- Vérifications résumées en une ligne ; le détail s'ouvre au toucher -->
+        <TextView
+            android:id="@+id/checksText"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="32dp"
-            android:text="@string/start_monitoring"
-            android:textSize="18sp" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:minHeight="40dp"
+            android:padding="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
 
+        <!-- Au repos : une seule action -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/okButton"
+            android:id="@+id/startButton"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
+            android:layout_height="120dp"
             android:layout_marginTop="16dp"
-            android:text="@string/im_ok"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            app:backgroundTint="@color/dati_green" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/sosButton"
-            android:layout_width="match_parent"
-            android:layout_height="140dp"
-            android:layout_marginTop="32dp"
-            android:text="@string/sos"
-            android:textColor="@color/white"
-            android:textSize="28sp"
+            android:text="@string/start_monitoring"
+            android:textSize="22sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/dati_red" />
+            app:cornerRadius="16dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/mapButton"
+        <!-- Protection active : les deux gestes de sécurité, en très grand -->
+        <LinearLayout
+            android:id="@+id/activeActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="@string/map_title" />
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/testButton"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/test_button" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/okButton"
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:text="@string/im_ok"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/dati_green"
+                app:cornerRadius="16dp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sosButton"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/sos"
+                android:textColor="@color/white"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/dati_red"
+                app:cornerRadius="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/stopButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/stop_monitoring" />
+        </LinearLayout>
+
+        <!-- Accès directs secondaires -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/settingsButton"
+                android:id="@+id/mapButton"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:text="@string/settings" />
+                android:text="@string/map_short" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/journalButton"
+                android:id="@+id/testButton"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:text="@string/journal_title" />
+                android:text="@string/test_short" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/disclaimer"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
-
-        <TextView
-            android:id="@+id/versionText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
     </LinearLayout>
 </ScrollView>

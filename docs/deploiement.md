@@ -107,6 +107,31 @@ Changer de clé impose de désinstaller une fois l'ancienne version sur chaque t
   le développeur est inconnu ; il faut accepter « Installer quand même », voire désactiver
   temporairement l'analyse Play Protect.
 
+### Mode administrateur
+
+Un **mot de passe administrateur** empêche le salarié de modifier les réglages. Il peut être
+défini sur le téléphone (Réglages → Mode administrateur), dans le QR code d'enrôlement
+(champ de la console) ou par le MDM (clé `admin`).
+
+| Protégé par le mot de passe | Toujours accessible au salarié |
+|---|---|
+| Réglages, lien de configuration | Démarrer / arrêter la protection |
+| Application d'un nouveau QR code de configuration | « Je vais bien », SOS, essai |
+| Création et suppression des zones sur le téléphone | Carte (consultation) |
+| Effacement du journal | Journal (consultation), À propos |
+
+Arrêter la protection reste libre : le salarié doit pouvoir la couper en fin de poste et pendant
+ses pauses (voir le [cadre juridique](cadre-juridique.md)).
+
+- Le mot de passe n'est jamais stocké en clair (empreinte PBKDF2 salée).
+- Après 5 erreurs, la saisie est bloquée 1 minute, puis 2, 4… à chaque nouvelle série.
+- Le déverrouillage dure 5 minutes, et se referme dès qu'on quitte les réglages.
+- **Mot de passe oublié** : pousser un nouveau mot de passe par le MDM, ou désinstaller et
+  réinstaller l'application (tous les réglages sont alors perdus).
+- **Limite** : sur un téléphone non géré, l'utilisateur peut toujours effacer les données de
+  l'application dans les paramètres Android, ce qui la réinitialise. Seul un téléphone géré par
+  un MDM (Android Enterprise) permet de l'empêcher.
+
 ## 3. Enrôler un salarié
 
 1. Console → **Équiper un salarié** : nom, réglages, éventuels numéros SMS de secours.
@@ -140,6 +165,7 @@ configuration) :
 | `sensitivity` | `LOW` / `NORMAL` / `HIGH` | `NORMAL` |
 | `call` | booléen | `false` |
 | `powersos` | booléen | `true` |
+| `admin` | texte (4 caractères min.) – mot de passe administrateur, stocké sur le téléphone sous forme d'empreinte | – |
 
 Une valeur invalide (serveur non HTTPS, numéro mal formé…) fait rejeter toute la configuration ;
 l'erreur est notée dans le journal de l'application.

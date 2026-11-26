@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Dati" parent="Theme.Material3.DayNight">
-        <item name="colorPrimary">@color/dati_red</item>
-        <item name="colorOnPrimary">@color/white</item>
+    <!-- Les couleurs de marque viennent de brand.xml. -->
+    <style name="Theme.Dati" parent="Theme.Material3.Light">
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorOnPrimary">@color/brand_on_primary</item>
+        <item name="colorSecondary">@color/brand_secondary</item>
+        <item name="android:colorBackground">@color/brand_background</item>
+        <item name="android:statusBarColor">@color/brand_primary</item>
+        <item name="actionBarTheme">@style/ThemeOverlay.Dati.ActionBar</item>
     </style>
 
-    <style name="Theme.Dati.Alarm" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="ThemeOverlay.Dati.ActionBar" parent="ThemeOverlay.Material3.Dark.ActionBar">
+        <item name="colorSurface">@color/brand_primary</item>
+        <item name="colorOnSurface">@color/brand_on_primary</item>
+        <item name="android:background">@color/brand_primary</item>
+    </style>
+
+    <style name="Theme.Dati.Alarm" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/dati_red</item>
         <item name="android:windowBackground">@color/dati_red</item>
         <item name="android:statusBarColor">@color/dati_red</item>

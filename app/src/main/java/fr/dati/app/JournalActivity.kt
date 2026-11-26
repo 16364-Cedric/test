@@ -16,14 +16,16 @@ class JournalActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         log = EventLog(this)
         binding.clearButton.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setMessage(R.string.journal_clear_confirm)
-                .setPositiveButton(R.string.journal_clear) { _, _ ->
-                    log.clear()
-                    render()
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
+            AdminGate.require(this) {
+                AlertDialog.Builder(this)
+                    .setMessage(R.string.journal_clear_confirm)
+                    .setPositiveButton(R.string.journal_clear) { _, _ ->
+                        log.clear()
+                        render()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
         }
     }
 

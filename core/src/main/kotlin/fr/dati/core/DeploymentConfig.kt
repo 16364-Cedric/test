@@ -20,6 +20,8 @@ data class DeploymentConfig(
     val fallSensitivity: FallSensitivity? = null,
     val callFirstContact: Boolean? = null,
     val powerButtonSos: Boolean? = null,
+    /** Mot de passe administrateur à définir sur le téléphone (jamais conservé en clair). */
+    val adminPassword: String? = null,
 ) {
     val isEmpty: Boolean get() = this == DeploymentConfig()
 
@@ -37,6 +39,7 @@ data class DeploymentConfig(
         const val KEY_SENSITIVITY = "sensitivity"
         const val KEY_CALL = "call"
         const val KEY_POWER_SOS = "powersos"
+        const val KEY_ADMIN = "admin"
 
         /**
          * Lit un lien de configuration : `dati://config?…` ou la page d'enrôlement `https://…/c#…`
@@ -105,6 +108,11 @@ data class DeploymentConfig(
                 },
                 callFirstContact = bool(KEY_CALL),
                 powerButtonSos = bool(KEY_POWER_SOS),
+                adminPassword = text(KEY_ADMIN)?.also {
+                    require(it.length >= AdminPassword.MIN_LENGTH) {
+                        "Mot de passe administrateur : au moins ${AdminPassword.MIN_LENGTH} caractères"
+                    }
+                },
             )
         }
 

@@ -19,6 +19,39 @@
     <string name="sos_hint">Maintenez le bouton SOS appuyé pour appeler à l\'aide.</string>
     <string name="sos_requires_monitoring">Démarrez d\'abord la protection pour pouvoir lancer un SOS.</string>
     <string name="settings">Réglages</string>
+    <string name="settings_locked">Réglages 🔒</string>
+    <string name="about_title">À propos</string>
+    <string name="map_short">🗺 Carte</string>
+    <string name="test_short">Lancer un essai</string>
+    <plurals name="checks_errors">
+        <item quantity="one">⛔ %1$d point bloquant – toucher pour voir</item>
+        <item quantity="other">⛔ %1$d points à vérifier, dont au moins un bloquant – toucher pour voir</item>
+    </plurals>
+    <plurals name="checks_warnings">
+        <item quantity="one">⚠️ %1$d point à vérifier – toucher pour voir</item>
+        <item quantity="other">⚠️ %1$d points à vérifier – toucher pour voir</item>
+    </plurals>
+
+    <!-- Mode administrateur -->
+    <string name="admin_title">Mode administrateur</string>
+    <string name="admin_prompt">Cette action est réservée à l\'administrateur.</string>
+    <string name="admin_password">Mot de passe administrateur</string>
+    <string name="admin_password_confirm">Confirmer le mot de passe</string>
+    <string name="admin_unlock">Déverrouiller</string>
+    <string name="admin_wrong">Mot de passe incorrect.</string>
+    <string name="admin_locked_out">Trop d\'essais : réessayez dans %1$d s.</string>
+    <string name="admin_set_title">Mot de passe administrateur</string>
+    <string name="admin_set_message">Au moins %1$d caractères. Il sera demandé pour modifier les réglages, les zones créées sur le téléphone ou effacer le journal. Conservez-le en lieu sûr : en cas d\'oubli, seule une nouvelle configuration par l\'outil de gestion des téléphones ou une réinstallation permettent de le retirer.</string>
+    <string name="admin_too_short">Mot de passe trop court (au moins %1$d caractères).</string>
+    <string name="admin_mismatch">Les deux mots de passe ne correspondent pas.</string>
+    <string name="admin_status_on">🔒 Réglages protégés par mot de passe. Le salarié peut toujours démarrer et arrêter la protection, lancer un SOS ou un essai.</string>
+    <string name="admin_status_off">🔓 Aucun mot de passe : tout utilisateur peut modifier les réglages.</string>
+    <string name="admin_define">Définir un mot de passe administrateur</string>
+    <string name="admin_change">Changer le mot de passe administrateur</string>
+    <string name="admin_remove">Supprimer le mot de passe</string>
+    <string name="admin_remove_confirm">Supprimer le mot de passe ? Les réglages redeviendront modifiables par tous.</string>
+    <string name="admin_set_done">Mot de passe défini. Les réglages se verrouillent dès que vous quittez cet écran.</string>
+    <string name="config_summary_admin">Mot de passe administrateur : défini par l\'entreprise</string>
     <string name="confirm_stop">Arrêter la protection ? Plus aucune alerte ne sera envoyée.</string>
     <string name="contacts_warning">Aucun contact d\'urgence ni serveur de supervision configuré : ouvrez les réglages.</string>
     <string name="disclaimer">Cette application ne remplace pas un dispositif DATI certifié ni l\'organisation des secours prévue par l\'employeur. Testez-la régulièrement avec vos contacts.</string>

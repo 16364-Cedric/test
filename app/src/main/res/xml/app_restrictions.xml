@@ -14,4 +14,6 @@
     <restriction android:key="sensitivity" android:restrictionType="choice" android:title="@string/settings_sensitivity" android:entries="@array/sensitivity_labels" android:entryValues="@array/sensitivity_values" android:defaultValue="NORMAL" />
     <restriction android:key="call" android:restrictionType="bool" android:title="@string/settings_call" android:defaultValue="false" />
     <restriction android:key="powersos" android:restrictionType="bool" android:title="@string/settings_power_sos" android:defaultValue="true" />
+    <!-- Mot de passe administrateur : stocké sur le téléphone sous forme d'empreinte uniquement. -->
+    <restriction android:key="admin" android:restrictionType="string" android:title="@string/admin_password" />
 </restrictions>

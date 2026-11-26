@@ -2,6 +2,7 @@ package fr.dati.app
 
 import android.content.Context
 import androidx.core.content.edit
+import fr.dati.core.AdminPassword
 import fr.dati.core.DatiConfig
 import fr.dati.core.DeploymentConfig
 import fr.dati.core.FallSensitivity
@@ -86,6 +87,16 @@ class DatiSettings(context: Context) {
         get() = prefs.getString(KEY_LOCAL_ZONES, "[]").orEmpty()
         set(value) = prefs.edit { putString(KEY_LOCAL_ZONES, value) }
 
+    /** Empreinte du mot de passe administrateur (jamais le mot de passe lui-même) ; vide si aucun. */
+    var adminPasswordHash: String
+        get() = prefs.getString(KEY_ADMIN_HASH, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_ADMIN_HASH, value) }
+
+    /** Empreinte de la dernière configuration MDM appliquée, pour ne pas la réappliquer à chaque fois. */
+    var managedConfigFingerprint: String
+        get() = prefs.getString(KEY_MDM_FINGERPRINT, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_MDM_FINGERPRINT, value) }
+
     /** Zones du serveur et zones locales. */
     fun allZones(): List<RiskZone> = ZoneCodec.parse(zonesJson) + ZoneCodec.parse(localZonesJson)
 
@@ -116,6 +127,7 @@ class DatiSettings(context: Context) {
         config.fallSensitivity?.let { fallSensitivity = it }
         config.callFirstContact?.let { callFirstContact = it }
         config.powerButtonSos?.let { powerButtonSos = it }
+        config.adminPassword?.let { adminPasswordHash = AdminPassword.hash(it) }
     }
 
     fun toConfig() = DatiConfig(
@@ -144,5 +156,7 @@ class DatiSettings(context: Context) {
         private const val KEY_ZONES = "zones_json"
         private const val KEY_ZONES_VERSION = "zones_version"
         private const val KEY_LOCAL_ZONES = "local_zones_json"
+        private const val KEY_ADMIN_HASH = "admin_password_hash"
+        private const val KEY_MDM_FINGERPRINT = "mdm_fingerprint"
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.RestrictionsManager
 import android.util.Log
 import fr.dati.core.DeploymentConfig
+import java.security.MessageDigest
 
 /** Configuration poussée par l'outil de gestion de flotte de l'entreprise (MDM / Android Enterprise). */
 object ManagedConfig {
@@ -17,6 +18,12 @@ object ManagedConfig {
             @Suppress("DEPRECATION")
             restrictions.get(key)?.let { key to it.toString() }
         }.toMap()
+        // Même configuration que la dernière fois : rien à faire (évite de recalculer
+        // l'empreinte du mot de passe administrateur à chaque ouverture de l'application).
+        val fingerprint = MessageDigest.getInstance("SHA-256")
+            .digest(values.toSortedMap().toString().toByteArray())
+            .joinToString("") { "%02x".format(it) }
+        if (fingerprint == settings.managedConfigFingerprint) return false
         val config = try {
             DeploymentConfig.fromMap(values)
         } catch (e: IllegalArgumentException) {
@@ -24,8 +31,10 @@ object ManagedConfig {
             EventLog(context).add("Configuration MDM refusée : ${e.message}")
             return false
         }
+        settings.managedConfigFingerprint = fingerprint
         if (config.isEmpty) return false
         settings.apply(config)
+        EventLog(context).add("Configuration MDM appliquée")
         return true
     }
 }

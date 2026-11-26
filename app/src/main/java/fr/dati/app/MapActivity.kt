@@ -79,7 +79,7 @@ class MapActivity : AppCompatActivity() {
                 override fun singleTapConfirmedHelper(p: MapPoint?) = false
 
                 override fun longPressHelper(p: MapPoint?): Boolean {
-                    p?.let(::askNewZone)
+                    if (p != null) AdminGate.require(this@MapActivity) { askNewZone(p) }
                     return true
                 }
             })
@@ -250,8 +250,10 @@ class MapActivity : AppCompatActivity() {
             .setPositiveButton(android.R.string.ok, null)
         if (isLocal) {
             dialog.setNegativeButton(R.string.map_zone_delete) { _, _ ->
-                saveLocalZones(ZoneCodec.parse(settings.localZonesJson).filter { it.id != zone.id })
-                EventLog(this).add("Zone à risque supprimée du téléphone : ${zone.name}")
+                AdminGate.require(this) {
+                    saveLocalZones(ZoneCodec.parse(settings.localZonesJson).filter { it.id != zone.id })
+                    EventLog(this).add("Zone à risque supprimée du téléphone : ${zone.name}")
+                }
             }
         }
         dialog.show()

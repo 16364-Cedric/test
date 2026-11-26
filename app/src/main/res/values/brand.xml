@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Charte graphique de l'application : SEUL fichier de couleurs à modifier pour l'adapter à la
+    charte de l'entreprise (voir docs/charte-graphique.md). Le logo est dans
+    drawable/brand_logo.xml (ou brand_logo.png à sa place).
+
+    Les couleurs de sécurité (rouge alarme, vert « Je vais bien », orange pré-alarme) sont dans
+    colors.xml et ne doivent pas suivre la charte : elles doivent rester reconnaissables.
+
+    Valeurs provisoires, en attendant la charte officielle.
+-->
+<resources>
+    <!-- Couleur principale : barre de titre, boutons courants. -->
+    <color name="brand_primary">#1F3A5F</color>
+    <!-- Texte et icônes posés sur la couleur principale. -->
+    <color name="brand_on_primary">#FFFFFF</color>
+    <!-- Couleur d'accent : éléments secondaires (contours, liens). -->
+    <color name="brand_secondary">#4A6FA5</color>
+    <!-- Fond des écrans. -->
+    <color name="brand_background">#F5F6F8</color>
+    <!-- Nom affiché sous le logo. -->
+    <string name="brand_name" translatable="false">DATI</string>
+</resources>

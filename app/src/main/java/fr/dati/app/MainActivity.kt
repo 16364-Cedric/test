@@ -11,6 +11,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -47,21 +49,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         settings = DatiSettings(this)
 
-        binding.toggleButton.setOnClickListener {
-            if (DatiStatus.state.value == DatiState.Idle) requestStart() else confirmStop()
-        }
+        binding.startButton.setOnClickListener { requestStart() }
+        binding.stopButton.setOnClickListener { confirmStop() }
         binding.okButton.setOnClickListener { DatiService.send(this, DatiService.ACTION_OK) }
         binding.sosButton.setOnClickListener { Toast.makeText(this, R.string.sos_hint, Toast.LENGTH_SHORT).show() }
         binding.sosButton.setOnLongClickListener {
             triggerSos()
             true
         }
-        binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         binding.testButton.setOnClickListener { confirmTest() }
-        binding.journalButton.setOnClickListener { startActivity(Intent(this, JournalActivity::class.java)) }
         binding.mapButton.setOnClickListener { startActivity(Intent(this, MapActivity::class.java)) }
-        val info = packageManager.getPackageInfo(packageName, 0)
-        binding.versionText.text = getString(R.string.version, info.versionName, PackageInfoCompat.getLongVersionCode(info))
+        binding.checksText.setOnClickListener { showChecks() }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -83,6 +81,49 @@ class MainActivity : AppCompatActivity() {
             DatiService.send(this, DatiService.ACTION_RELOAD)
         }
         renderChecks()
+        invalidateOptionsMenu()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.menu_settings).title =
+            getString(if (AdminGate.isProtected(this)) R.string.settings_locked else R.string.settings)
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.menu_settings -> {
+            openSettings()
+            true
+        }
+        R.id.menu_journal -> {
+            startActivity(Intent(this, JournalActivity::class.java))
+            true
+        }
+        R.id.menu_about -> {
+            showAbout()
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
+    }
+
+    private fun openSettings() {
+        AdminGate.require(this) { startActivity(Intent(this, SettingsActivity::class.java)) }
+    }
+
+    private fun showAbout() {
+        val info = packageManager.getPackageInfo(packageName, 0)
+        val version = getString(R.string.version, info.versionName, PackageInfoCompat.getLongVersionCode(info))
+        AlertDialog.Builder(this)
+            .setTitle(R.string.about_title)
+            .setIcon(R.drawable.brand_logo)
+            .setMessage("$version\n\n${getString(R.string.disclaimer)}")
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     /** Lien `dati://config?…` ouvert depuis le QR code d'enrôlement. */
@@ -110,17 +151,22 @@ class MainActivity : AppCompatActivity() {
             config.immobilitySeconds?.let { add(getString(R.string.config_summary_immobility, it)) }
             config.verticalitySeconds?.let { add(getString(R.string.config_summary_verticality, it)) }
             config.batteryThresholdPercent?.let { add(getString(R.string.config_summary_battery, it)) }
+            config.adminPassword?.let { add(getString(R.string.config_summary_admin)) }
         }.joinToString("\n")
         AlertDialog.Builder(this)
             .setTitle(R.string.config_confirm_title)
             .setMessage(getString(R.string.config_confirm_message, summary))
             .setPositiveButton(R.string.config_apply) { _, _ ->
-                settings.apply(config)
-                EventLog(this).add("Configuration d'entreprise appliquée")
-                if (DatiStatus.state.value != DatiState.Idle) DatiService.send(this, DatiService.ACTION_RELOAD)
-                Toast.makeText(this, R.string.config_applied, Toast.LENGTH_SHORT).show()
-                render(DatiStatus.state.value)
-                renderChecks()
+                // Téléphone verrouillé : seul l'administrateur peut appliquer une nouvelle configuration.
+                AdminGate.require(this) {
+                    settings.apply(config)
+                    EventLog(this).add("Configuration d'entreprise appliquée")
+                    if (DatiStatus.state.value != DatiState.Idle) DatiService.send(this, DatiService.ACTION_RELOAD)
+                    Toast.makeText(this, R.string.config_applied, Toast.LENGTH_SHORT).show()
+                    render(DatiStatus.state.value)
+                    renderChecks()
+                    invalidateOptionsMenu()
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -145,7 +191,7 @@ class MainActivity : AppCompatActivity() {
             is DatiState.Alarm -> R.string.status_alarm to R.color.dati_red
         }
         binding.statusText.setText(statusRes)
-        binding.statusText.setTextColor(ContextCompat.getColor(this, colorRes))
+        binding.statusCard.setCardBackgroundColor(ContextCompat.getColor(this, colorRes))
         binding.detailText.text = when (state) {
             DatiState.Idle -> getString(R.string.detail_idle)
             is DatiState.Monitoring -> state.nextCheckInAtMs
@@ -168,31 +214,50 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // Seules les actions utiles dans l'état courant sont affichées.
         val active = state != DatiState.Idle
-        binding.toggleButton.setText(if (active) R.string.stop_monitoring else R.string.start_monitoring)
-        binding.okButton.isEnabled = active
+        binding.startButton.isVisible = !active
+        binding.activeActions.isVisible = active
         binding.testButton.isEnabled = state is DatiState.Monitoring
-        binding.contactsWarning.isVisible = settings.contacts.isEmpty() && !settings.serverConfigured
     }
 
     private fun causeLabel(reason: fr.dati.core.AlarmReason) =
         DatiStatus.alarmDetail?.let { "${reason.label(this)} ($it)" } ?: reason.label(this)
 
+    /** Vérifications résumées en une ligne ; le détail s'affiche au toucher. */
     private fun renderChecks() {
         val issues = SelfCheck.run(this, settings)
-        binding.checksText.text = if (issues.isEmpty()) {
+        val errors = issues.count { it.severity == SelfCheck.Severity.ERROR }
+        binding.checksText.text = when {
+            issues.isEmpty() -> getString(R.string.check_all_good)
+            errors > 0 -> resources.getQuantityString(R.plurals.checks_errors, issues.size, issues.size)
+            else -> resources.getQuantityString(R.plurals.checks_warnings, issues.size, issues.size)
+        }
+        binding.checksText.setTextColor(
+            ContextCompat.getColor(this, if (errors > 0) R.color.dati_red else if (issues.isEmpty()) R.color.dati_green else R.color.dati_orange)
+        )
+    }
+
+    private fun showChecks() {
+        val issues = SelfCheck.run(this, settings)
+        val message = if (issues.isEmpty()) {
             getString(R.string.check_all_good)
         } else {
-            issues.joinToString("\n") { issue ->
+            issues.joinToString("\n\n") { issue ->
                 (if (issue.severity == SelfCheck.Severity.ERROR) "⛔ " else "⚠️ ") + issue.message
             }
         }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.checks_title)
+            .setMessage(message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun requestStart() {
         if (settings.contacts.isEmpty() && !settings.serverConfigured) {
             Toast.makeText(this, R.string.error_no_contacts, Toast.LENGTH_LONG).show()
-            startActivity(Intent(this, SettingsActivity::class.java))
+            openSettings()
             return
         }
         val permissions = buildList {

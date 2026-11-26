@@ -3,8 +3,11 @@ package fr.dati.app
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import fr.dati.app.databinding.ActivitySettingsBinding
+import fr.dati.core.AdminPassword
 import fr.dati.core.DatiState
 import fr.dati.core.DeploymentConfig
 import fr.dati.core.FallSensitivity
@@ -16,18 +19,60 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Écran protégé : ne s'ouvre que déverrouillé (même s'il est relancé par le système).
+        if (!AdminGate.isUnlocked(this)) {
+            finish()
+            return
+        }
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         settings = DatiSettings(this)
         load()
+        renderAdmin()
         binding.saveButton.setOnClickListener { save() }
         binding.applyLinkButton.setOnClickListener { applyLink() }
+        binding.adminSetButton.setOnClickListener { setAdminPassword() }
+        binding.adminRemoveButton.setOnClickListener { removeAdminPassword() }
     }
 
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun finish() {
+        // En quittant les réglages, le mode administrateur se referme.
+        AdminGate.lock()
+        super.finish()
+    }
+
+    private fun renderAdmin() {
+        val isProtected = settings.adminPasswordHash.isNotEmpty()
+        binding.adminStatus.setText(if (isProtected) R.string.admin_status_on else R.string.admin_status_off)
+        binding.adminSetButton.setText(if (isProtected) R.string.admin_change else R.string.admin_define)
+        binding.adminRemoveButton.isVisible = isProtected
+    }
+
+    private fun setAdminPassword() {
+        AdminGate.askNewPassword(this) { password ->
+            settings.adminPasswordHash = AdminPassword.hash(password)
+            EventLog(this).add("Mot de passe administrateur défini")
+            Toast.makeText(this, R.string.admin_set_done, Toast.LENGTH_LONG).show()
+            renderAdmin()
+        }
+    }
+
+    private fun removeAdminPassword() {
+        AlertDialog.Builder(this)
+            .setMessage(R.string.admin_remove_confirm)
+            .setPositiveButton(R.string.admin_remove) { _, _ ->
+                settings.adminPasswordHash = ""
+                EventLog(this).add("Mot de passe administrateur supprimé")
+                renderAdmin()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun load() {

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Logo PROVISOIRE (bouclier générique). À remplacer par le logo officiel de l'entreprise :
+    supprimer ce fichier et déposer brand_logo.png (fond transparent, environ 600 px de large)
+    dans drawable-nodpi/, ou un équivalent vectoriel ici. Voir docs/charte-graphique.md.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/brand_primary"
+        android:pathData="M12,1L3,5v6c0,5.55 3.84,10.74 9,12 5.16,-1.26 9,-6.45 9,-12V5l-9,-4z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10,17l-4,-4 1.41,-1.41L10,14.17l6.59,-6.59L18,9l-8,8z" />
+</vector>

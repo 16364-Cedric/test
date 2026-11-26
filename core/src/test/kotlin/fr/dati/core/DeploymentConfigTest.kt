@@ -72,4 +72,10 @@ class DeploymentConfigTest {
         assertEquals(20, config.batteryThresholdPercent)
         assertFailsWith<IllegalArgumentException> { DeploymentConfig.fromQuery("battery=150") }
     }
+
+    @Test
+    fun `reads the admin password`() {
+        assertEquals("s3cret!", DeploymentConfig.fromQuery("admin=s3cret%21").adminPassword)
+        assertFailsWith<IllegalArgumentException> { DeploymentConfig.fromQuery("admin=12") }
+    }
 }
