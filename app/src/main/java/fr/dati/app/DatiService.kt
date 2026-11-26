@@ -113,7 +113,7 @@ class DatiService : Service(), SensorEventListener {
             val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
             batteryPercent = percent
             charging = isCharging
-            if (batteryWatcher.onReading(percent, isCharging)) onLowBattery(percent)
+            batteryWatcher.onReading(percent, isCharging)?.let { onLowBattery(percent, critical = it == BatteryWatcher.Level.CRITICAL) }
         }
     }
 
@@ -316,6 +316,7 @@ class DatiService : Service(), SensorEventListener {
         immobilityDetector = settings.immobilitySeconds.takeIf { it > 0 }?.let { ImmobilityDetector(it * 1_000L) }
         verticalityDetector = settings.verticalitySeconds.takeIf { it > 0 }?.let { VerticalityDetector(it * 1_000L) }
         batteryWatcher.thresholdPercent = settings.batteryThresholdPercent
+        batteryWatcher.criticalPercent = settings.batteryCriticalPercent
         powerButtonSosEnabled = settings.powerButtonSos
     }
 
@@ -457,17 +458,18 @@ class DatiService : Service(), SensorEventListener {
         }
     }
 
-    private fun onLowBattery(percent: Int) {
-        log.add("Batterie faible : $percent %")
+    /** Batterie faible (premier palier) ou critique (second palier) : sonnerie, SMS et serveur. */
+    private fun onLowBattery(percent: Int, critical: Boolean) {
+        log.add(if (critical) "Batterie critique : $percent %" else "Batterie faible : $percent %")
         Notifications.showInfo(
             this,
             Notifications.BATTERY_INFO_ID,
-            getString(R.string.low_battery_title),
-            getString(R.string.low_battery_text, percent),
+            getString(if (critical) R.string.critical_battery_title else R.string.low_battery_title),
+            getString(if (critical) R.string.critical_battery_text else R.string.low_battery_text, percent),
         )
-        if (machine.state is DatiState.Monitoring) signal.buzz()
-        alertSender.sendLowBattery(percent)
-        server.event("low_battery", statePayload()) { }
+        signal.warn()
+        alertSender.sendLowBattery(percent, critical)
+        server.event(if (critical) "battery_critical" else "low_battery", statePayload()) { }
     }
 
     /**
@@ -485,7 +487,7 @@ class DatiService : Service(), SensorEventListener {
                     getString(R.string.network_lost_title),
                     getString(R.string.network_lost_text),
                 )
-                if (machine.state is DatiState.Monitoring) signal.buzz()
+                signal.warn()
             }
             is NetworkLossTracker.Event.Restored -> {
                 val minutes = event.durationMs / 60_000

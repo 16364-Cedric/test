@@ -143,6 +143,7 @@
         <label>Alarme d'immobilité (s, 0 = non) <input name="immobility" type="number" min="0" value="120"></label>
         <label>Perte de verticalité (s, 0 = non ; téléphone porté debout) <input name="verticality" type="number" min="0" value="0"></label>
         <label>Alerte batterie sous (%) <input name="battery" type="number" min="0" max="90" value="20"></label>
+        <label>Alerte batterie critique sous (%) <input name="batterycritical" type="number" min="0" max="90" value="10"></label>
         <label>Mot de passe administrateur du téléphone (optionnel, 4 caractères min.) <input name="admin" type="password" minlength="4" autocomplete="new-password"></label>
         <label>Sensibilité chute
           <select name="sensitivity"><option value="LOW">Faible</option><option value="NORMAL" selected>Normale</option><option value="HIGH">Élevée</option></select>
@@ -199,7 +200,7 @@
     }
 
     function alertCard(alert, now, withActions) {
-      const urgent = ['alarm', 'lost_contact'].includes(alert.type) && !alert.test;
+      const urgent = ['alarm', 'lost_contact', 'battery_critical'].includes(alert.type) && !alert.test;
       const cls = alert.ackedAt ? 'acked' : urgent ? 'urgent' : 'info';
       return el('div', { class: `alert ${cls}` },
         el('div', { class: 'title' }, `${alert.deviceName} — ${alert.label}`),
@@ -477,6 +478,7 @@
         immobility: form.get('immobility'),
         verticality: form.get('verticality'),
         battery: form.get('battery'),
+        batterycritical: form.get('batterycritical'),
         admin: form.get('admin'),
         sensitivity: form.get('sensitivity'),
       };

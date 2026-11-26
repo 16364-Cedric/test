@@ -5,7 +5,8 @@ const MAX_BODY_BYTES = 64 * 1024;
 
 /** Paramètres de l'application qu'un lien de configuration peut transmettre (voir DeploymentConfig côté Android). */
 const CONFIG_KEYS = [
-  'contacts', 'checkin', 'prealarm', 'immobility', 'verticality', 'battery', 'fall', 'sensitivity', 'call', 'powersos',
+  'contacts', 'checkin', 'prealarm', 'immobility', 'verticality', 'battery', 'batterycritical', 'fall', 'sensitivity',
+  'call', 'powersos',
   'admin',
 ];
 

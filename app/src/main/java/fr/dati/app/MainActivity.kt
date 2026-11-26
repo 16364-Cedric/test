@@ -150,6 +150,7 @@ class MainActivity : AppCompatActivity() {
             config.immobilitySeconds?.let { add(getString(R.string.config_summary_immobility, it)) }
             config.verticalitySeconds?.let { add(getString(R.string.config_summary_verticality, it)) }
             config.batteryThresholdPercent?.let { add(getString(R.string.config_summary_battery, it)) }
+            config.batteryCriticalPercent?.let { add(getString(R.string.config_summary_battery_critical, it)) }
             config.adminPassword?.let { add(getString(R.string.config_summary_admin)) }
         }.joinToString("\n")
         AlertDialog.Builder(this)

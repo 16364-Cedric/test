@@ -7,6 +7,7 @@ export const AlertType = Object.freeze({
   LOW_BATTERY: 'low_battery',
   SHUTDOWN: 'shutdown',
   NETWORK_LOSS: 'network_loss',
+  BATTERY_CRITICAL: 'battery_critical',
 });
 
 const URGENT = new Set([AlertType.ALARM, AlertType.LOST_CONTACT]);
@@ -229,7 +230,10 @@ export class Supervisor {
     return this.reply(device, payload);
   }
 
-  /** Événement ponctuel : start, stop, prealarm, alarm, ok, low_battery, shutdown, network_restored. */
+  /**
+   * Événement ponctuel : start, stop, prealarm, alarm, ok, low_battery, battery_critical, shutdown,
+   * network_restored.
+   */
   event(device, payload = {}) {
     this.applyPayload(device, payload);
     const location = payload.location ?? device.lastLocation;
@@ -269,10 +273,23 @@ export class Supervisor {
         break;
       }
       case 'low_battery':
+      case 'battery_critical':
       case 'shutdown': {
-        const type = payload.type === 'shutdown' ? AlertType.SHUTDOWN : AlertType.LOW_BATTERY;
+        const type = {
+          low_battery: AlertType.LOW_BATTERY,
+          battery_critical: AlertType.BATTERY_CRITICAL,
+          shutdown: AlertType.SHUTDOWN,
+        }[payload.type];
         const alert = this.createAlert(device, type, { location });
-        this.notifier.send({ title: `${this.describe(alert)} : ${device.name}`, message: this.describe(alert), urgent: false });
+        // Batterie critique : le téléphone va s'éteindre, les référents doivent réagir vite.
+        const urgent = type === AlertType.BATTERY_CRITICAL;
+        const battery = Number.isFinite(payload.battery) ? ` (${payload.battery} %)` : '';
+        this.notifier.send({
+          title: `${this.describe(alert)} : ${device.name}`,
+          message: `${this.describe(alert)}${battery}`,
+          urgent,
+          click: urgent ? mapsLink(location) : null,
+        });
         break;
       }
       case 'network_restored': {
@@ -356,6 +373,8 @@ export class Supervisor {
         return 'Perte de contact avec le téléphone';
       case AlertType.LOW_BATTERY:
         return 'Batterie faible';
+      case AlertType.BATTERY_CRITICAL:
+        return 'Batterie critique : le téléphone va s\'éteindre';
       case AlertType.SHUTDOWN:
         return 'Téléphone en cours d\'extinction';
       case AlertType.NETWORK_LOSS:

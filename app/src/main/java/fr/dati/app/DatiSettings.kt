@@ -45,6 +45,11 @@ class DatiSettings(context: Context) {
         get() = prefs.getInt(KEY_BATTERY, 20)
         set(value) = prefs.edit { putInt(KEY_BATTERY, value.coerceIn(0, 90)) }
 
+    /** Seuil de batterie critique en pourcentage (second palier), 0 pour désactiver. */
+    var batteryCriticalPercent: Int
+        get() = prefs.getInt(KEY_BATTERY_CRITICAL, 10)
+        set(value) = prefs.edit { putInt(KEY_BATTERY_CRITICAL, value.coerceIn(0, 90)) }
+
     var fallDetection: Boolean
         get() = prefs.getBoolean(KEY_FALL, true)
         set(value) = prefs.edit { putBoolean(KEY_FALL, value) }
@@ -123,6 +128,7 @@ class DatiSettings(context: Context) {
         config.immobilitySeconds?.let { immobilitySeconds = it }
         config.verticalitySeconds?.let { verticalitySeconds = it }
         config.batteryThresholdPercent?.let { batteryThresholdPercent = it }
+        config.batteryCriticalPercent?.let { batteryCriticalPercent = it }
         config.fallDetection?.let { fallDetection = it }
         config.fallSensitivity?.let { fallSensitivity = it }
         config.callFirstContact?.let { callFirstContact = it }
@@ -145,6 +151,7 @@ class DatiSettings(context: Context) {
         private const val KEY_IMMOBILITY = "immobility_seconds"
         private const val KEY_VERTICALITY = "verticality_seconds"
         private const val KEY_BATTERY = "battery_threshold"
+        private const val KEY_BATTERY_CRITICAL = "battery_critical"
         private const val KEY_FALL = "fall_detection"
         private const val KEY_CALL = "call_first_contact"
         private const val KEY_ACTIVE = "monitoring_active"

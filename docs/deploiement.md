@@ -161,6 +161,7 @@ configuration) :
 | `immobility` | entier (s, 0 = désactivé) | `120` |
 | `verticality` | entier (s, 0 = désactivé) – téléphone porté debout uniquement | `30` |
 | `battery` | entier (%, 0 = désactivé) | `20` |
+| `batterycritical` | entier (%, 0 = désactivé) – second palier, alerte urgente | `10` |
 | `fall` | booléen | `true` |
 | `sensitivity` | `LOW` / `NORMAL` / `HIGH` | `NORMAL` |
 | `call` | booléen | `false` |

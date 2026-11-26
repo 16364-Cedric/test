@@ -33,11 +33,11 @@ L'écran **Carte et zones à risque** de l'application montre la position du sal
 et les zones à risque (celle où il se trouve est surlignée en rouge).
 
 Également : **auto-contrôle** sur l'écran principal (autorisations, batterie, capteurs, réseau,
-serveur), **essai guidé** de la chaîne d'alerte, alerte **batterie faible** (sous 20 % par défaut)
+serveur), **essai guidé** de la chaîne d'alerte, alerte **batterie faible** (sous 20 %) puis **critique** (sous 10 %), avec sonnerie
 et **extinction**, **journal** des événements, configuration à distance par **QR code** ou **MDM**.
 
 **Perte de réseau** : sans réseau, aucune alerte ne peut partir du téléphone. Après 1 minute sans
-réseau mobile ni Internet, le téléphone vibre et prévient le salarié pour qu'il rejoigne une zone
+réseau mobile ni Internet, le téléphone sonne, vibre et prévient le salarié pour qu'il rejoigne une zone
 couverte. Au retour du réseau, une alarme déclenchée pendant la coupure est renvoyée, les
 événements en attente sont transmis au serveur, et les contacts sont informés si la coupure a
 duré plus de 15 minutes. Côté serveur, un téléphone muet depuis 15 minutes déclenche l'alerte

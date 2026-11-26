@@ -16,6 +16,7 @@ data class DeploymentConfig(
     val immobilitySeconds: Int? = null,
     val verticalitySeconds: Int? = null,
     val batteryThresholdPercent: Int? = null,
+    val batteryCriticalPercent: Int? = null,
     val fallDetection: Boolean? = null,
     val fallSensitivity: FallSensitivity? = null,
     val callFirstContact: Boolean? = null,
@@ -35,6 +36,7 @@ data class DeploymentConfig(
         const val KEY_IMMOBILITY = "immobility"
         const val KEY_VERTICALITY = "verticality"
         const val KEY_BATTERY = "battery"
+        const val KEY_BATTERY_CRITICAL = "batterycritical"
         const val KEY_FALL = "fall"
         const val KEY_SENSITIVITY = "sensitivity"
         const val KEY_CALL = "call"
@@ -100,6 +102,7 @@ data class DeploymentConfig(
                 immobilitySeconds = int(KEY_IMMOBILITY, 0),
                 verticalitySeconds = int(KEY_VERTICALITY, 0),
                 batteryThresholdPercent = int(KEY_BATTERY, 0, 90),
+                batteryCriticalPercent = int(KEY_BATTERY_CRITICAL, 0, 90),
                 fallDetection = bool(KEY_FALL),
                 fallSensitivity = text(KEY_SENSITIVITY)?.let {
                     requireNotNull(FallSensitivity.entries.find { s -> s.name.equals(it, ignoreCase = true) }) {

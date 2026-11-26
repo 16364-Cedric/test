@@ -57,8 +57,9 @@ class AlertSender(
         sendSms(context.getString(if (wasTest) R.string.sms_test_end else R.string.sms_all_clear, name()))
     }
 
-    fun sendLowBattery(percent: Int) {
-        sendSms(context.getString(R.string.sms_low_battery, name(), percent, where(lastKnownLocation())))
+    fun sendLowBattery(percent: Int, critical: Boolean) {
+        val template = if (critical) R.string.sms_critical_battery else R.string.sms_low_battery
+        sendSms(context.getString(template, name(), percent, where(lastKnownLocation())))
     }
 
     fun sendNetworkRestored(lostAtWallMs: Long, minutes: Long) {

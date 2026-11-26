@@ -184,3 +184,15 @@ test('live positions are only exposed when enabled', () => {
   supervisor.event(device, { type: 'stop', state: 'idle' });
   assert.equal(supervisor.status().devices[0].location, undefined, 'jamais hors surveillance');
 });
+
+test('low battery is informative, critical battery is urgent', () => {
+  const { supervisor, device, sent } = setup();
+  supervisor.event(device, { type: 'low_battery', battery: 19 });
+  assert.equal(sent.at(-1).urgent, false);
+  supervisor.event(device, { type: 'battery_critical', battery: 9, location: { lat: 45, lon: 5 } });
+  assert.equal(sent.at(-1).urgent, true);
+  assert.match(sent.at(-1).message, /9 %/);
+  const labels = supervisor.status().alerts.map((a) => a.label);
+  assert.ok(labels.includes('Batterie faible'));
+  assert.ok(labels.includes('Batterie critique : le téléphone va s\'éteindre'));
+});

@@ -83,6 +83,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.immobilityInput.setText(settings.immobilitySeconds.toString())
         binding.verticalityInput.setText(settings.verticalitySeconds.toString())
         binding.batteryInput.setText(settings.batteryThresholdPercent.toString())
+        binding.batteryCriticalInput.setText(settings.batteryCriticalPercent.toString())
         binding.fallSwitch.isChecked = settings.fallDetection
         binding.sensitivityGroup.check(
             when (settings.fallSensitivity) {
@@ -120,6 +121,7 @@ class SettingsActivity : AppCompatActivity() {
         settings.immobilitySeconds = binding.immobilityInput.intOr(settings.immobilitySeconds)
         settings.verticalitySeconds = binding.verticalityInput.intOr(settings.verticalitySeconds)
         settings.batteryThresholdPercent = binding.batteryInput.intOr(settings.batteryThresholdPercent)
+        settings.batteryCriticalPercent = binding.batteryCriticalInput.intOr(settings.batteryCriticalPercent)
         settings.fallDetection = binding.fallSwitch.isChecked
         settings.fallSensitivity = when (binding.sensitivityGroup.checkedRadioButtonId) {
             R.id.sensitivityLow -> FallSensitivity.LOW

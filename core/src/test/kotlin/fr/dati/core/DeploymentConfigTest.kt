@@ -67,9 +67,10 @@ class DeploymentConfigTest {
 
     @Test
     fun `reads verticality and battery threshold`() {
-        val config = DeploymentConfig.fromQuery("verticality=30&battery=20")
+        val config = DeploymentConfig.fromQuery("verticality=30&battery=20&batterycritical=10")
         assertEquals(30, config.verticalitySeconds)
         assertEquals(20, config.batteryThresholdPercent)
+        assertEquals(10, config.batteryCriticalPercent)
         assertFailsWith<IllegalArgumentException> { DeploymentConfig.fromQuery("battery=150") }
     }
 
