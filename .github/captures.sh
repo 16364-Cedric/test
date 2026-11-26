@@ -33,13 +33,24 @@ libere() {
   for i in 1 2 3; do
     adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
     adb pull /sdcard/ui.xml /tmp/ui.xml >/dev/null 2>&1
-    grep -q 'package="com.android.permissioncontroller"\|package="com.android.settings"\|package="android"' /tmp/ui.xml || return 0
+    grep -q 'permissioncontroller"\|package="com.android.settings"\|package="android"' /tmp/ui.xml || return 0
     tap "Lorsque vous utilisez"; tap "Autoriser"; tap "Allow"; tap "OK"; pause 2
     grep -q 'package="com.android.settings"' /tmp/ui.xml && adb shell input keyevent KEYCODE_BACK
     pause 1
   done
 }
 
+# Le passage en français redémarre Android juste après le démarrage : attendre qu'il soit prêt.
+sleep 15
+adb wait-for-device
+for i in $(seq 1 60); do
+  [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ] \
+    && adb shell service check activity | grep -q found \
+    && adb shell pm path android >/dev/null 2>&1 && break
+  sleep 3
+done
+sleep 20
+adb shell getprop persist.sys.locale
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 adb shell locksettings set-disabled true 2>/dev/null
