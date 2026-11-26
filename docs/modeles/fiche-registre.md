@@ -10,11 +10,11 @@
 | Finalité | Détecter une situation de détresse d'un salarié travaillant seul et organiser ses secours |
 | Base légale | Obligation légale de sécurité de l'employeur (art. 6.1.c RGPD, art. L4121-1 C. trav.) ; à défaut, intérêt légitime (art. 6.1.f) |
 | Personnes concernées | Salariés affectés à des postes isolés ; contacts d'urgence (numéro de téléphone) |
-| Données | Identité (nom affiché) ; état de la protection et niveau de batterie ; position GPS (communiquée uniquement en cas d'alerte) ; type, heure et suivi des alertes ; numéros des contacts d'urgence |
+| Données | Identité (nom affiché) ; position GPS (communiquée uniquement en cas d'alerte, par SMS) ; journal des événements sur le téléphone ; numéros des contacts d'urgence |
 | Données non collectées | Mouvements bruts (analysés sur le téléphone), position hors période de protection, contenu du téléphone |
-| Destinataires | Référents sécurité et poste de garde désignés ; contacts d'urgence par SMS ; [hébergeur, service de notification] |
-| Transferts hors UE | [Aucun / à préciser selon l'hébergeur et le service de notification] |
-| Durée de conservation | Alertes : 30 jours après clôture (paramètre `RETENTION_DAYS`) ; état courant : tant que l'appareil est enrôlé ; journal local : 300 derniers événements sur le téléphone |
-| Mesures de sécurité | HTTPS ; jeton par appareil stocké haché ; console protégée par mot de passe ; accès limité aux référents ; sauvegardes ; confirmation obligatoire avant toute configuration à distance |
+| Destinataires | Référents sécurité et poste de garde désignés, contacts d'urgence (par SMS) |
+| Transferts hors UE | Aucun (aucune donnée centralisée) |
+| Durée de conservation | Journal local : 300 derniers événements sur le téléphone ; SMS reçus : [règle de conservation des téléphones des référents] |
+| Mesures de sécurité | Aucun serveur ; mot de passe administrateur (empreinte salée) sur le téléphone ; confirmation obligatoire avant toute configuration à distance |
 | AIPD | [Réalisée le … / écartée le … – justification] |
 | Information des personnes | Notice remise le … ; CSE consulté le … |

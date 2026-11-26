@@ -6,16 +6,15 @@
 
 | Rôle | Personnes | Joignable |
 |---|---|---|
-| Référents de premier niveau (reçoivent les alertes) | [noms] | [horaires, canal ntfy / Teams] |
-| Escalade (alerte non prise en charge en [5] min) | [noms / poste de garde] | [24 h/24 ?] |
+| Référents de premier niveau (reçoivent les alertes) | [noms] | [horaires, numéro recevant les SMS] |
+| Second niveau (aucun référent joignable en [5] min) | [noms / poste de garde] | [24 h/24 ?] |
 | Responsable de la procédure | [nom] | – |
 
 **Objectif** : un secours sur place en moins de [XX] minutes après l'alarme.
 
 ## Réception d'une alerte
 
-1. **Cliquer sur « Je prends en charge »** dans la console : les autres référents savent que
-   l'alerte est traitée, et le salarié voit votre nom sur son téléphone.
+1. **Prévenir les autres référents** (réponse au SMS ou appel) que vous prenez l'alerte en charge.
 2. **Appeler le salarié.**
 3. Selon la situation :
 
@@ -24,10 +23,10 @@
 | Le salarié répond et va bien (fausse alerte) | Lui demander d'arrêter l'alarme sur le téléphone ; clôturer l'alerte |
 | Le salarié répond et a besoin d'aide | Envoyer de l'aide ; appeler le **15 / 112** si nécessaire |
 | Pas de réponse – alarme (chute, immobilité, SOS, confirmation manquée) | **Se rendre ou envoyer quelqu'un immédiatement** à la position indiquée ; si le délai est trop long ou la situation grave, appeler le **112** en donnant la position |
-| Pas de réponse – perte de contact | Rappeler, puis contacter un collègue proche ou se rendre à la dernière position connue ; ne pas attendre que le téléphone se reconnecte |
+| Pas de réponse – perte de réseau signalée | Rappeler, puis contacter un collègue proche ou se rendre à la dernière position connue ; ne pas attendre que le téléphone se reconnecte |
 | Batterie faible / extinction | Appeler le salarié pour qu'il recharge ou change de téléphone, ou prévoir un autre moyen d'alerte |
 
-4. **Clôturer** l'alerte dans la console une fois la situation réglée.
+4. **Confirmer** aux autres référents la fin de l'alerte une fois la situation réglée.
 5. **Consigner** chaque alerte réelle et chaque fausse alerte (date, cause, délai d'intervention)
    pour le bilan mensuel.
 

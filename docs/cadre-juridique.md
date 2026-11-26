@@ -42,20 +42,11 @@ L'INRS publie des ressources sur le travail isolé et les dispositifs d'alarme (
 | Donnée | Où | Quand | Qui la voit |
 |---|---|---|---|
 | Mouvements (accéléromètre, gyroscope) | Téléphone uniquement | Pendant la protection | Personne : analysés sur place, jamais transmis |
-| Position GPS | Téléphone, serveur, SMS | Suivie pendant la protection | **Uniquement jointe à une alerte** (console, SMS, notification) |
-| État (protégé, pré-alarme, alarme), batterie | Serveur | Toutes les 5 min pendant la protection | Superviseurs |
-| Alertes (type, heure, position, prise en charge) | Serveur | En cas d'alerte | Superviseurs ; supprimées 30 jours après clôture |
+| Position GPS | Téléphone, SMS | Suivie pendant la protection | **Uniquement jointe à une alerte** (SMS aux contacts) |
 | Journal des événements | Téléphone uniquement | – | Le salarié |
-| Nom, numéros des contacts | Téléphone, serveur (nom) | – | Superviseurs |
+| Nom, numéros des contacts | Téléphone, SMS | – | Les contacts d'urgence |
 
-Le serveur conserve la **dernière position** de chaque téléphone pour pouvoir la joindre à une
-alerte « perte de contact ». Par défaut, la console ne l'affiche jamais en dehors d'une alerte.
-
-**Positions en direct** (option `LIVE_POSITIONS`) : afficher en permanence la position des
-salariés protégés est une géolocalisation continue, bien plus intrusive. Elle doit être justifiée
-par l'analyse de risques (par exemple, des secours plus rapides sur un grand site), inscrite dans
-l'AIPD, présentée au CSE et mentionnée dans la notice d'information. Elle reste limitée aux
-périodes où la protection est active.
+Aucune donnée n'est centralisée : l'application ne s'appuie sur aucun serveur.
 
 **Zones à risque** : le temps passé dans une zone est calculé sur le téléphone ; les entrées et
 sorties ne sont pas transmises. Seul un dépassement de durée suivi d'une alarme est signalé,
@@ -76,13 +67,9 @@ poste, pendant ses pauses et en dehors du temps de travail.
 5. **Minimisation** : ne pas utiliser les données pour autre chose que la sécurité (pas de
    contrôle des horaires, de la productivité ou des déplacements, pas de sanction disciplinaire
    fondée sur ces données).
-6. **Sécurité** : serveur en HTTPS, mot de passe de console robuste et individuel si possible,
-   accès limité aux référents, sauvegarde du fichier de données, mise à jour du serveur.
-7. **Sous-traitants** : si le serveur est hébergé chez un prestataire, ou si l'on utilise
-   ntfy.sh, Teams ou Slack pour les notifications, vérifier le contrat (art. 28 RGPD) et la
-   localisation des données. Une instance ntfy auto-hébergée évite de faire transiter des
-   positions par un tiers.
-8. **Contacts SMS** : privilégier des numéros professionnels (référents, poste de garde) plutôt
+6. **Sécurité** : mot de passe administrateur sur chaque téléphone, téléphones verrouillés,
+   application signée avec la clé de l'entreprise.
+7. **Contacts SMS** : privilégier des numéros professionnels (référents, poste de garde) plutôt
    que des proches. Leur numéro est une donnée personnelle de tiers.
 
 ## 5. Check-list avant mise en service
@@ -92,7 +79,7 @@ poste, pendant ses pauses et en dehors du temps de travail.
 - [ ] CSE informé et consulté
 - [ ] Traitement inscrit au registre, AIPD réalisée ou écartée par écrit avec le DPO
 - [ ] Notice d'information remise et expliquée à chaque salarié équipé
-- [ ] Serveur en HTTPS, mot de passe robuste, sauvegarde en place
+- [ ] Mot de passe administrateur défini sur chaque téléphone
 - [ ] Application signée avec la clé de l'entreprise, téléphones testés une nuit complète
 - [ ] Phase pilote réalisée, seuils ajustés, exercice d'intervention chronométré
 - [ ] Essais périodiques planifiés (au moins hebdomadaires)

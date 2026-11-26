@@ -6,79 +6,18 @@ responsable sécurité). Avant tout déploiement, lire aussi le [cadre juridique
 ## Vue d'ensemble
 
 ```
-Téléphone du salarié ──(SMS)──────────────────────────► Contacts d'urgence (optionnel)
-        │
-        └──(HTTPS : battements de cœur, alertes)──► Serveur de supervision ──► Console web
-                                                            │                    (« Je prends en charge »)
-                                                            └──► ntfy / Teams / Slack (référents)
+Téléphone du salarié ──(SMS + position, appel en option)──► Contacts d'urgence (référents)
 ```
 
-- Le **serveur** reçoit un battement de cœur toutes les 5 minutes (30 s en alarme). Sans nouvelles
-  pendant 15 minutes d'un téléphone en surveillance, il lève une alerte **« perte de contact »** :
-  c'est ce qui couvre la batterie vide, le téléphone cassé ou l'absence de réseau.
-- Une alerte non prise en charge au bout de 5 minutes est **escaladée** vers un second canal.
-- Quand un référent clique sur **« Je prends en charge »**, son nom s'affiche sur le téléphone du
-  salarié en alarme.
-- Les SMS aux contacts restent possibles en complément (ou seuls, sans serveur).
+- Le téléphone surveille seul le salarié ; en cas d'alarme, il envoie un **SMS** avec un lien
+  vers sa position à chaque contact, puis un rappel toutes les 5 minutes ; le premier contact
+  peut être appelé automatiquement.
+- Il n'y a **pas de serveur central** : aucune alerte « perte de contact » si le téléphone
+  s'éteint ou casse. La confirmation périodique « Je vais bien », les alertes batterie et
+  l'alerte de perte de réseau en tiennent lieu en partie ; la procédure d'intervention doit
+  prévoir un contrôle humain (appel de fin de poste, par exemple).
 
-## 1. Installer le serveur
-
-Le serveur est un programme Node.js sans dépendance, fourni en image Docker. Il faut une machine
-joignable en **HTTPS** depuis Internet (les téléphones l'appellent depuis le réseau mobile).
-
-```sh
-docker run -d --name dati --restart unless-stopped \
-  -p 127.0.0.1:8080:8080 \
-  -v dati-data:/data \
-  -e ADMIN_PASSWORD='un-mot-de-passe-long-et-unique' \
-  -e PUBLIC_URL='https://dati.mon-entreprise.fr' \
-  -e NTFY_URL='https://ntfy.sh/dati-alertes-7f3k2q9x' \
-  -e ESCALATION_NTFY_URL='https://ntfy.sh/dati-escalade-p4m8z1' \
-  ghcr.io/16364-cedric/dati-supervision:latest
-```
-
-L'image est publiée par la CI à chaque modification. Si `docker pull` est refusé, rendre le
-paquet public (GitHub → profil → *Packages* → `dati-supervision` → *Package settings*) ou
-construire l'image soi-même : `docker build -t dati-supervision server`.
-
-Puis placer un proxy HTTPS devant, par exemple [Caddy](https://caddyserver.com) qui obtient le
-certificat tout seul (`/etc/caddy/Caddyfile`) :
-
-```
-dati.mon-entreprise.fr {
-    reverse_proxy 127.0.0.1:8080
-}
-```
-
-### Variables d'environnement
-
-| Variable | Rôle | Défaut |
-|---|---|---|
-| `ADMIN_PASSWORD` | Mot de passe de la console (obligatoire) | – |
-| `PUBLIC_URL` | Adresse publique HTTPS, utilisée dans les QR codes | `http://localhost:8080` |
-| `NTFY_URL` | Sujet [ntfy](https://ntfy.sh) recevant les alertes | – |
-| `ESCALATION_NTFY_URL` | Sujet ntfy des escalades (sinon `NTFY_URL`) | – |
-| `WEBHOOK_URL` | Webhook recevant `{"text": "…"}` (Teams, Slack, Mattermost…) | – |
-| `HEARTBEAT_TIMEOUT_MIN` | Silence avant « perte de contact » | `15` |
-| `ESCALATE_AFTER_MIN` | Délai avant escalade d'une alerte non prise en charge | `5` |
-| `RETENTION_DAYS` | Conservation des alertes clôturées | `30` |
-| `DATA_FILE` | Fichier de données | `/data/dati.json` |
-| `LIVE_POSITIONS` | `true` pour afficher sur la carte la position des salariés protégés, hors alerte (à valider avec le DPO, voir le cadre juridique) | désactivé |
-| `TILE_URL` | Fond de carte (modèle `{z}/{x}/{y}`) | OpenStreetMap |
-| `TILE_ATTRIBUTION` | Mention de la source du fond de carte | contributeurs OpenStreetMap |
-
-**Fond de carte** : les serveurs d'OpenStreetMap conviennent à un usage modéré (quelques
-postes de supervision). Pour un usage plus intensif ou un réseau fermé, utiliser un fournisseur
-de tuiles ou un serveur interne, et renseigner `TILE_URL`.
-
-**Notifications des référents** : installer l'application **ntfy** sur leurs téléphones et
-s'abonner au sujet choisi. Choisir un nom de sujet long et imprévisible (il fait office de mot de
-passe), ou héberger sa propre instance ntfy. Les alertes urgentes arrivent en priorité maximale,
-avec un lien vers la position.
-
-**Sauvegarde** : le volume `/data` contient les appareils enrôlés et l'historique des alertes.
-
-## 2. Distribuer l'application
+## 1. Distribuer l'application
 
 ### Signature
 
@@ -110,8 +49,8 @@ Changer de clé impose de désinstaller une fois l'ancienne version sur chaque t
 ### Mode administrateur
 
 Un **mot de passe administrateur** empêche le salarié de modifier les réglages. Il peut être
-défini sur le téléphone (Réglages → Mode administrateur), dans le QR code d'enrôlement
-(champ de la console) ou par le MDM (clé `admin`).
+défini sur le téléphone (Réglages → Mode administrateur), dans le lien de configuration
+(QR code) ou par le MDM (clé `admin`).
 
 | Protégé par le mot de passe | Toujours accessible au salarié |
 |---|---|
@@ -132,18 +71,14 @@ ses pauses (voir le [cadre juridique](cadre-juridique.md)).
   l'application dans les paramètres Android, ce qui la réinitialise. Seul un téléphone géré par
   un MDM (Android Enterprise) permet de l'empêcher.
 
-## 3. Enrôler un salarié
+## 2. Équiper un salarié
 
-1. Console → **Équiper un salarié** : nom, réglages, éventuels numéros SMS de secours.
-2. Le salarié installe l'application, puis **scanne le QR code** avec l'appareil photo et touche
-   **« Ouvrir dans DATI »**. L'application affiche la configuration et demande confirmation.
-3. Si le QR code n'ouvre pas l'application : copier le lien affiché sous le QR code dans
-   DATI → Réglages → **Lien de configuration**.
-4. Le salarié démarre la protection, accepte les autorisations, puis **lance un essai** : une
-   alerte marquée ESSAI doit apparaître dans la console.
-
-Le QR code contient la clé secrète de l'appareil et n'est affiché qu'une fois. Pour un
-téléphone perdu ou remplacé : supprimer l'appareil dans la console et en créer un nouveau.
+1. Le salarié installe l'application.
+2. **Réglages** : nom, numéros des contacts d'urgence, durées ; ou ouvrir un **lien de
+   configuration** (QR code, MDM) préparé par l'administrateur, que l'application affiche et
+   fait confirmer avant de l'appliquer.
+3. Le salarié démarre la protection, accepte les autorisations, puis **lance un essai** : chaque
+   contact doit recevoir un SMS marqué ESSAI.
 
 ### Configuration par MDM
 
@@ -152,8 +87,6 @@ configuration) :
 
 | Clé | Type | Exemple |
 |---|---|---|
-| `server` | texte | `https://dati.mon-entreprise.fr` |
-| `token` | texte | clé de l'appareil (créée dans la console) |
 | `name` | texte | `Alice Martin` |
 | `contacts` | texte | `+33612345678,+33698765432` |
 | `checkin` | entier (min, 0 = désactivé) | `30` |
@@ -168,18 +101,14 @@ configuration) :
 | `powersos` | booléen | `true` |
 | `admin` | texte (4 caractères min.) – mot de passe administrateur, stocké sur le téléphone sous forme d'empreinte | – |
 
-Une valeur invalide (serveur non HTTPS, numéro mal formé…) fait rejeter toute la configuration ;
+Une valeur invalide (numéro mal formé, durée hors bornes…) fait rejeter toute la configuration ;
 l'erreur est notée dans le journal de l'application.
 
-## 4. Zones à risque (ATEX…)
+## 3. Zones à risque (ATEX…)
 
-Dans la console, section **Carte** → **Zones à risque** : nommer la zone, fixer la durée
-maximale de présence, puis la tracer sur la carte (polygone : cliquer les sommets ; cercle :
-cliquer le centre et régler le rayon).
-
-Les téléphones reçoivent les zones à leur prochain contact avec le serveur (au démarrage de la
-protection, puis toutes les 5 minutes) et les conservent pour fonctionner sans réseau. Le
-décompte se fait **sur le téléphone** :
+Sur le téléphone, écran **Carte et zones à risque** : **appui long** sur la carte à l'endroit de
+la zone, puis nommer la zone, fixer son rayon et la durée maximale de présence. Les zones sont
+conservées sur le téléphone et fonctionnent sans réseau. Le décompte se fait **sur le téléphone** :
 
 1. à l'entrée dans la zone, le salarié est informé de la durée autorisée ;
 2. une minute avant la limite, le téléphone vibre et l'invite à sortir ;
@@ -192,39 +121,22 @@ décompte se fait **sur le téléphone** :
 - Dessiner les zones **plus larges que la zone réelle** (marge de 10 à 20 m) pour ne pas sous-estimer le
   temps de présence.
 - Dans un bâtiment ou un local en sous-sol, le GPS peut ne pas fonctionner du tout : utiliser
-  alors des **balises Bluetooth** (ci-dessous).
+  alors la confirmation périodique (ci-dessous).
 - La localisation précise doit être autorisée sur le téléphone ; l'écran principal le signale
   sinon.
 
-### Zones intérieures : balises Bluetooth
+### Zones intérieures
 
-Pour une zone en intérieur, associer à la zone une ou plusieurs **balises Bluetooth Low Energy**
-(petits boîtiers à pile, environ 10 à 30 € pièce). La présence est alors déterminée par les
-balises seules ; la forme tracée sur la carte ne sert plus qu'à l'affichage.
+Les zones créées sur le téléphone reposent sur le GPS seul. L'application sait détecter des
+**balises Bluetooth**, mais elles ne se déclarent que dans des zones transmises par un serveur
+de supervision, qui n'est plus fourni : en intérieur, préférer la confirmation périodique et
+l'immobilité.
 
-- **Formats acceptés** : iBeacon (`uuid:major:minor`, le plus courant) ou adresse matérielle
-  (`aa:bb:cc:dd:ee:ff`, à éviter si la balise change d'adresse). L'identifiant se lit avec
-  l'application du fabricant de la balise ou une application gratuite de scan Bluetooth.
-- **Placement** : au centre de la zone ou une balise par pièce, réglée à faible puissance pour
-  que son signal ne déborde pas hors de la zone (les murs et les équipements métalliques
-  atténuent fortement le signal).
-- **Signal minimal (dBm)** : le salarié est considéré dans la zone tant qu'il capte une balise
-  au-dessus de ce seuil (-75 dBm par défaut, soit quelques mètres). Augmenter vers -65 pour
-  resserrer la zone, baisser vers -85 pour l'élargir. **Étalonner sur place** : se tenir à la
-  limite de la zone et lire la valeur dans l'application de scan.
-- Le salarié est considéré sorti après 30 secondes sans signal.
-- **Certification ATEX** : une balise installée *dans* la zone ATEX doit elle-même être un
-  matériel certifié pour cette zone. À défaut, la placer juste à l'extérieur, à l'entrée, et
-  régler le seuil en conséquence. Il en va de même pour le téléphone du salarié, qui doit être
-  certifié pour la zone dans laquelle il entre.
-- Le Bluetooth doit rester activé sur le téléphone et autorisé pour l'application ; l'écran
-  principal le signale sinon.
-
-## 5. Fiabilité selon les téléphones
+## 4. Fiabilité selon les téléphones
 
 Certains fabricants arrêtent les applications en arrière-plan malgré le service au premier plan.
 Pour chaque modèle utilisé dans l'entreprise, **tester une nuit complète** écran éteint et
-vérifier qu'aucune « perte de contact » n'apparaît dans la console.
+vérifier au journal de l'application que la surveillance n'a pas été interrompue.
 
 | Fabricant | Réglages à faire |
 |---|---|
@@ -237,11 +149,11 @@ vérifier qu'aucune « perte de contact » n'apparaît dans la console.
 
 Référence détaillée : <https://dontkillmyapp.com>.
 
-## 6. Phase pilote recommandée
+## 5. Phase pilote recommandée
 
 1. 3 à 5 volontaires, 2 à 3 semaines, sur les vrais postes de travail.
 2. Un essai guidé par personne et par semaine.
-3. Relever chaque fausse alerte (journal de l'application + console) et chaque situation qui
+3. Relever chaque fausse alerte (journal de l'application) et chaque situation qui
    aurait dû déclencher une alerte.
 4. Ajuster la sensibilité de chute, la durée d'immobilité et l'intervalle de confirmation.
 5. Valider la procédure d'intervention ([modèle](modeles/procedure-intervention.md)) avec un

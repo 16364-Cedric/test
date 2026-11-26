@@ -19,16 +19,14 @@ Quand vous activez la protection, l'application surveille :
 - le bouton **SOS** (appui long, ou 4 appuis rapides sur le bouton marche/arrêt).
 
 En cas de problème, le téléphone sonne et vous laisse [30] secondes pour indiquer que tout va
-bien. Sans réponse, une alerte est envoyée avec votre position. Si votre téléphone ne donne plus
-de nouvelles pendant [15] minutes, une alerte « perte de contact » est également envoyée.
+bien. Sans réponse, une alerte est envoyée par SMS avec votre position à vos contacts d'urgence.
 
 ## Quelles données ? Qui y a accès ?
 
 - Vos **mouvements** sont analysés **uniquement sur le téléphone** et ne sont jamais transmis.
 - Votre **position** n'est communiquée **qu'en cas d'alerte**, aux personnes chargées de vous
   secourir : [liste des destinataires].
-- L'état de la protection (active ou non, batterie) est visible par [les référents].
-- Les alertes sont conservées [30] jours après leur clôture, puis supprimées.
+- Rien n'est centralisé : le journal des événements reste sur votre téléphone.
 
 **Ces données ne sont utilisées que pour votre sécurité.** Elles ne servent pas à contrôler vos
 horaires, vos déplacements ou votre travail, et ne peuvent fonder aucune sanction.

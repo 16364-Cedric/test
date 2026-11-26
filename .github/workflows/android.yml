@@ -6,37 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  server:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: server
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Tests du serveur de supervision
-        run: npm test
-
-  server-image:
-    needs: server
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Image Docker du serveur (ghcr.io)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/dati-supervision:latest"
-          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          docker build -t "$image" server
-          docker push "$image"
-
   build:
     runs-on: ubuntu-latest
     permissions:
